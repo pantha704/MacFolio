@@ -59,7 +59,7 @@ const setupTextHover = (container: HTMLElement | null, type: keyof typeof ANIMAT
         const letterCenterY = letterTop - top + letterHeight / 2;
         const distance = Math.sqrt(Math.pow(mouseX - letterCenterX, 2) + Math.pow(mouseY - letterCenterY, 2))
 
-        const intensity = Math.exp(-(distance ** 2) / 200000)
+        const intensity = Math.exp(-(distance ** 2) / 10000)
 
         const newWeight = weightConfig.min + (weightConfig.max - weightConfig.min) * intensity
         const newScale = scaleConfig.min + (scaleConfig.max - scaleConfig.min) * intensity
@@ -97,7 +97,7 @@ const Welcome = () => {
 
   return (
     <section id="welcome">
-      <p ref={subtitleRef} className="cursor-default w-fit mx-auto">{renderText("Welcome to my", "text-3xl font-georama", 100)}</p>
+      <p ref={subtitleRef} className="cursor-default w-fit mx-auto">{renderText("Hey, I'm Pratham! Welcome to my", "text-3xl font-georama", 100)}</p>
       <h1 ref={titleRef} className='mt-7 cursor-default w-fit mx-auto'>{renderText("portfolio", "text-9xl italic font-georama")}</h1>
 
       <div className='small-screen'>
