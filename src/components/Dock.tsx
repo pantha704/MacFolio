@@ -63,8 +63,9 @@ const Dock = () => {
   const toggleApp = (app: {id: string, canOpen: boolean}) => {
     if (!app.canOpen) return
 
-    // @ts-expect-error - app.id is a string, but toggleWindow expects a specific key
-    toggleWindow(app.id)
+    if (!(app.id in windows)) return
+
+    toggleWindow(app.id as keyof typeof windows)
   }
 
   return (
