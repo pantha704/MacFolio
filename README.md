@@ -1,73 +1,222 @@
-# React + TypeScript + Vite
+# 🖥️ MacFolio - Interactive macOS Portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A stunning, fully interactive portfolio website inspired by macOS Big Sur, featuring a desktop-like experience with draggable windows, a functional dock, and beautiful UI elements.
 
-Currently, two official plugins are available:
+![MacFolio Preview](https://img.shields.io/badge/Status-Live-success?style=for-the-badge)
+![React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?style=for-the-badge&logo=tailwind-css)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## React Compiler
+- 🎨 **Pixel-Perfect macOS UI** - Authentic macOS Big Sur design with smooth animations
+- 🪟 **Interactive Windows** - Draggable, resizable windows with minimize/maximize functionality
+- 📱 **Responsive Design** - Works seamlessly across all devices
+- 🖱️ **Functional Dock** - Just like macOS with hover effects and app launching
+- 📂 **File System Navigation** - Browse through projects, photos, and files
+- 🌙 **Dark Mode Support** - Beautiful light and dark themes
+- ⚡ **Lightning Fast** - Built with Vite for optimal performance
+- 🎯 **Interactive Elements** - Clickable links, opening applications, and more
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tech Stack
 
-## Expanding the ESLint configuration
+- **Framework:** React 19 with TypeScript
+- **Build Tool:** Vite 7
+- **Styling:** Tailwind CSS 4.1
+- **Date Handling:** Day.js
+- **Package Manager:** Bun
+- **Linting:** ESLint 9
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📦 Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- [Bun](https://bun.sh/) (recommended) or Node.js 18+
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Setup
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/pantha704/MacFolio.git
+   cd MacFolio
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   bun install
+   # or
+   npm install
+   ```
+
+3. **Start development server**
+
+   ```bash
+   bun run dev
+   # or
+   npm run dev
+   ```
+
+4. **Open your browser**
+   ```
+   Navigate to http://localhost:5173
+   ```
+
+## 🏗️ Build for Production
+
+```bash
+bun run build
+# or
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Preview the production build:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+bun run preview
+# or
+npm run preview
 ```
+
+## 📁 Project Structure
+
+```
+macos-portfolio/
+├── public/
+│   ├── icons/           # UI icons (wifi, search, user, etc.)
+│   ├── images/          # Project screenshots, gallery, profile
+│   ├── files/           # Resume PDF and documents
+│   └── macbook.png      # Device mockup
+├── src/
+│   ├── components/      # React components
+│   │   └── Navbar.tsx   # Top menu bar
+│   ├── constants/       # App configuration and data
+│   │   └── index.ts     # Nav links, projects, tech stack, etc.
+│   ├── App.tsx          # Main application component
+│   ├── main.tsx         # Application entry point
+│   └── index.css        # Global styles
+├── vite.config.ts       # Vite configuration
+├── tsconfig.json        # TypeScript configuration
+└── package.json         # Dependencies and scripts
+```
+
+## 🎯 Customization
+
+### Update Personal Information
+
+Edit `src/constants/index.ts` to customize:
+
+- **Projects** - Add your portfolio projects in `WORK_LOCATION`
+- **Social Links** - Update `socials` array with your links
+- **Tech Stack** - Modify `techStack` with your skills
+- **Blog Posts** - Add your articles in `blogPosts`
+- **Gallery** - Replace images in the `gallery` array
+- **About Me** - Update `ABOUT_LOCATION` with your info
+
+### Example: Adding a New Project
+
+```typescript
+{
+  id: 8,
+  name: "My Awesome Project",
+  icon: "/images/folder.png",
+  kind: "folder",
+  position: "top-10 left-5",
+  children: [
+    {
+      id: 1,
+      name: "Project Description.txt",
+      icon: "/images/txt.png",
+      kind: "file",
+      fileType: "txt",
+      description: [
+        "Your project description here...",
+      ],
+    },
+    // Add more files...
+  ],
+}
+```
+
+### Update Resume
+
+Replace `/public/files/resume.pdf` with your own resume.
+
+### Change Colors & Styling
+
+All Tailwind styles can be customized in:
+
+- `src/index.css` - Global styles
+- Individual component files
+
+## 📱 Applications Included
+
+- **Portfolio** (Finder) - Browse your projects
+- **Articles** (Safari) - Your blog posts
+- **Gallery** (Photos) - Image gallery
+- **Contact** - Get in touch form
+- **Skills** (Terminal) - Tech stack showcase
+- **Archive** (Trash) - Fun easter egg
+
+## 🛠️ Available Scripts
+
+| Command           | Description              |
+| ----------------- | ------------------------ |
+| `bun run dev`     | Start development server |
+| `bun run build`   | Build for production     |
+| `bun run preview` | Preview production build |
+| `bun run lint`    | Run ESLint               |
+
+## 🌟 Features Showcase
+
+### Navigation Bar
+
+- System menu with dropdowns
+- Current time display
+- System icons (WiFi, Search, User, Dark Mode)
+
+### Dock
+
+- Hover effects with app magnification
+- App launch functionality
+- Active app indicators
+
+### Windows
+
+- Draggable and resizable
+- Minimize, maximize, close controls
+- Multiple window support with z-index management
+- Traffic light controls (red, yellow, green)
+
+### File System
+
+- Nested folder structure
+- Multiple file types (txt, pdf, images, URLs)
+- File previews and interactions
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 💬 Contact
+
+Your Name - [@yourhandle](https://twitter.com/yourhandle)
+
+Project Link: [https://github.com/pantha704/MacFolio](https://github.com/pantha704/MacFolio)
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ using React and TypeScript</sub>
+</div>
