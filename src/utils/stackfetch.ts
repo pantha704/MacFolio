@@ -32,9 +32,9 @@ export const getStackFetchOutput = () => {
   infoLines.push("----------------");
 
   // OS Info (Static for now)
-  infoLines.push(`${BOLD}${GREEN}OS${RESET}: macOS Sequoia 15.1`);
-  infoLines.push(`${BOLD}${GREEN}Host${RESET}: MacBook Pro (16-inch, ${new Date().getFullYear()})`);
-  infoLines.push(`${BOLD}${GREEN}Kernel${RESET}: Darwin 24.1.0`);
+  infoLines.push(`${BOLD}${GREEN}OS${RESET}: macOS web container`);
+  infoLines.push(`${BOLD}${GREEN}Host${RESET}: MacFolio Pro (${new Date().getFullYear()})`);
+  infoLines.push(`${BOLD}${GREEN}Kernel${RESET}: v8 engine`);
   const startDate = new Date('2025-11-25'); // Uptime starts from this date
   const now = new Date();
   const diffMs = now.getTime() - startDate.getTime();
@@ -42,8 +42,8 @@ export const getStackFetchOutput = () => {
   infoLines.push(`${BOLD}${GREEN}Uptime${RESET}: ${diffDays > 0 ? diffDays : 0} days`);
   infoLines.push(`${BOLD}${GREEN}Shell${RESET}: jsh 1.0`);
   infoLines.push(`${BOLD}${GREEN}Resolution${RESET}: 1920x1080`);
-  infoLines.push(`${BOLD}${GREEN}DE${RESET}: Aqua`);
-  infoLines.push(`${BOLD}${GREEN}WM${RESET}: Quartz Compositor`);
+  infoLines.push(`${BOLD}${GREEN}DE${RESET}: Vite-React`);
+  infoLines.push(`${BOLD}${GREEN}WM${RESET}: Zustand`);
   infoLines.push(""); // Spacer
 
   infoLines.push(`${BOLD}${GREEN}Tech Stack${RESET}`);
