@@ -110,7 +110,7 @@ const techStack = [
   },
   {
     category: "Styling",
-    items: ["Tailwind CSS", "CSS"],
+    items: ["CSS", "Tailwind", "Framer Motion", "GSAP"],
   },
   {
     category: "Backend",
@@ -122,7 +122,7 @@ const techStack = [
   },
   {
     category: "DevOps",
-    items: ["Git", "GitHub", "Docker", "Kafka", "K8s"],
+    items: ["Git", "WebSockets", "Prometheus/Grafana", "Docker/K8s", "gRPC", "Kafka"],
   },
 ];
 

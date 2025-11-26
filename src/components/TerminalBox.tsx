@@ -160,7 +160,7 @@ const TerminalBox = () => {
       <div ref={terminalRef} className="h-full w-full" />
       {isLoading && !isReady && (
         <div className="absolute top-2 right-2 text-green-500 font-mono text-xs">
-          Booting System...
+          Initializing...
         </div>
       )}
     </div>
