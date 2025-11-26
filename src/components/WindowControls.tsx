@@ -1,4 +1,3 @@
-import React from 'react'
 import { useWindowStore } from '#store/useWindowStore'
 
 const WindowControls = ({target}: {target: any}) => {

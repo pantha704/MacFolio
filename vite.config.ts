@@ -13,6 +13,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -21,6 +27,8 @@ export default defineConfig({
       '#store': resolve(__dirname, './src/store'),
       '#hoc': resolve(__dirname, './src/hoc'),
       '#windows': resolve(__dirname, './src/windows'),
+      '#context': resolve(__dirname, './src/context'),
+      '#utils': resolve(__dirname, './src/utils'),
     },
   },
 })

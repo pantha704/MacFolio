@@ -11,7 +11,9 @@
       "#constants/*": ["./src/constants/*"],
       "#store/*": ["./src/store/*"],
       "#hoc/*": ["./src/hoc/*"],
-      "#windows/*": ["./src/windows/*"]
+      "#windows/*": ["./src/windows/*"],
+      "#context/*": ["./src/context/*"],
+      "#utils/*": ["./src/utils/*"]
     }
   }
 }

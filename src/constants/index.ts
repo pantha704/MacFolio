@@ -110,19 +110,19 @@ const techStack = [
   },
   {
     category: "Styling",
-    items: ["Tailwind CSS", "Sass", "CSS"],
+    items: ["Tailwind CSS", "CSS"],
   },
   {
     category: "Backend",
-    items: ["Node.js", "Express", "NestJS", "Hono"],
+    items: ["Node.js", "Express", "NestJS", "Hono", "Zustand"],
   },
   {
     category: "Database",
     items: ["MongoDB", "PostgreSQL"],
   },
   {
-    category: "Dev Tools",
-    items: ["Git", "GitHub", "Docker"],
+    category: "DevOps",
+    items: ["Git", "GitHub", "Docker", "Kafka", "K8s"],
   },
 ];
 
