@@ -163,7 +163,7 @@ body {
   }
 
   #terminal {
-    @apply w-3xl h-120 absolute top-32 left-1/12 bg-[#1e1e1e] shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
+    @apply w-4xl h-120 absolute top-32 left-1/12 bg-[#1e1e1e] shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
 
     /* Custom Scrollbar for Terminal */
     ::-webkit-scrollbar {
