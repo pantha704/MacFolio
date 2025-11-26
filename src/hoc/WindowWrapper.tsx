@@ -4,8 +4,8 @@ import { useGSAP } from '@gsap/react'
 import { Draggable } from 'gsap/Draggable'
 import gsap from 'gsap'
 
-const WindowWrapper = (Component: React.ComponentType<any>, windowKey: WindowKey) => {
-  const Wrapped = (props: any) => {
+const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, windowKey: WindowKey) => {
+  const Wrapped = (props: Record<string, unknown>) => {
     // Performance optimization: Select only necessary state
     const isOpen = useWindowStore(state => state.windows[windowKey].isOpen)
     const zIndex = useWindowStore(state => state.windows[windowKey].zIndex)
@@ -51,9 +51,14 @@ const WindowWrapper = (Component: React.ComponentType<any>, windowKey: WindowKey
       const el = ref.current
       if (!el) return
 
+      // Use .window-header as trigger if it exists, otherwise fallback to element itself
+      const header = el.querySelector('.window-header')
+
       const [instance] = Draggable.create(el, {
+        trigger: header || el,
         onPress: () => focusWindow(windowKey),
         allowEventDefault: true, // Allow interaction with child elements
+        dragClickables: false, // Prevent dragging when clicking interactive elements
       })
 
       return () => instance.kill()
@@ -65,10 +70,12 @@ const WindowWrapper = (Component: React.ComponentType<any>, windowKey: WindowKey
       <section
         id={windowKey}
         ref={ref}
-        className='absolute window'
+        className='absolute window resize overflow-hidden min-w-[300px] min-h-[200px]'
         style={{ zIndex, display: 'block' }} // Ensure display is block when rendered
       >
-        <Component {...props} />
+        <div className="w-full h-full">
+          <Component {...props} />
+        </div>
       </section>
     )
   }
