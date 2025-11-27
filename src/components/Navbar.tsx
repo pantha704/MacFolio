@@ -50,12 +50,12 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
                 <img src="/images/logo.svg" alt="logo" className="pb-1 w-5 h-5"/>
-                <p className="text-sm font-bold tracking-wide">Pratham&apos;s Portfolio</p>
+                <p className="text-sm font-bold tracking-wide hidden sm:block">Pratham&apos;s Portfolio</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <ul className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <ul className="flex items-center gap-2 sm:gap-4">
               {navIcons.map(({id, img}) => (
                 <li key={id} className="relative">
                   <button
@@ -95,7 +95,7 @@ const Navbar = () => {
               ))}
             </ul>
 
-            <time dateTime="2025" className="text-sm font-medium min-w-[140px] text-right">
+            <time dateTime="2025" className="text-sm font-medium min-w-[80px] sm:min-w-[140px] text-right">
                 {time.format("ddd MMM D h:mm A")}
             </time>
           </div>

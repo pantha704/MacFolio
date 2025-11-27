@@ -279,7 +279,7 @@ const Gallery = () => {
   return (
     <div className="w-full h-full flex flex-col bg-[#1e1e1e] rounded-xl overflow-hidden font-georama border border-gray-800 shadow-2xl text-gray-200">
       {/* Header */}
-      <div className="window-header flex items-center gap-4 px-4 py-3 bg-[#2a2a2a] border-b border-gray-800">
+      <div className="window-header flex items-center gap-4 px-4 py-3 bg-[#2a2a2a] border-b border-gray-800 relative z-20">
         <WindowControls target="photos" />
 
         <div className="flex items-center gap-2 ml-4 text-gray-400">

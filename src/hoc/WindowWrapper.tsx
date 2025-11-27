@@ -23,6 +23,9 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
       }
     }, [isOpen])
 
+    // Mobile detection
+    const isMobile = window.innerWidth < 768
+
     useGSAP(() => {
       const el = ref.current
       if (!el || !isRendered) return
@@ -30,16 +33,24 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
       if (isOpen) {
         // Enter animation
         el.style.display = 'block'
-        gsap.fromTo(el,
-          { scale: 0.8, opacity: 0, y: 40 },
-          { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
-        )
+
+        if (isMobile) {
+            gsap.fromTo(el,
+                { opacity: 0, scale: 0.9 },
+                { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' }
+            )
+        } else {
+            gsap.fromTo(el,
+              { scale: 0.8, opacity: 0, y: 40 },
+              { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
+            )
+        }
       } else {
         // Exit animation
         gsap.to(el, {
-          scale: 0.8,
+          scale: isMobile ? 0.9 : 0.8,
           opacity: 0,
-          y: 40,
+          y: isMobile ? 0 : 40,
           duration: 0.3,
           ease: 'power3.in',
           onComplete: () => {
@@ -51,7 +62,7 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
 
     useGSAP(() => {
       const el = ref.current
-      if (!el) return
+      if (!el || isMobile) return // Disable draggable on mobile
 
       // Use .window-header as trigger if it exists, otherwise fallback to element itself
       const header = el.querySelector('.window-header')
@@ -70,6 +81,7 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
 
     // Custom Resize Logic
     const handleResizeStart = (e: React.MouseEvent) => {
+        if (isMobile) return // Disable resize on mobile
         e.preventDefault()
         e.stopPropagation()
         setIsInteracting(true)
@@ -105,18 +117,19 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
       <section
         id={windowKey}
         ref={ref}
-        className={`absolute window overflow-hidden min-w-[300px] min-h-[200px] ${isInteracting ? 'interacting' : ''}`}
+        className={`absolute window overflow-hidden ${isMobile ? 'fixed inset-0 w-full h-full top-0! left-0! rounded-none' : 'min-w-[300px] min-h-[200px]'} ${isInteracting ? 'interacting' : ''}`}
         style={{ zIndex, display: 'block' }} // Ensure display is block when rendered
         onMouseDown={() => focusWindow(windowKey)}
       >
         <div className="w-full h-full relative">
           <Component {...props} windowData={data} />
           {/* Custom Resize Handle */}
-          {/* Custom Resize Handle */}
-          <div
-            className="resize-handle"
-            onMouseDown={handleResizeStart}
-          />
+          {!isMobile && (
+            <div
+                className="resize-handle"
+                onMouseDown={handleResizeStart}
+            />
+          )}
         </div>
       </section>
     )
