@@ -76,6 +76,7 @@ export const useWindowStore = create<WindowState>()(
             state.nextZIndex++;
           } else {
             win.zIndex = INITIAL_Z_INDEX;
+            win.data = null;
           }
         }
       }),
