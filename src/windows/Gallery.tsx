@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
 import { photosLinks } from '#constants'
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Heart, Map, Users, Clock, X, ZoomIn, Upload, Trash2, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Heart, Map, Users, Clock, X, ZoomIn, Upload, Trash2, RotateCcw, Monitor } from 'lucide-react'
 
 import initialImages from '#constants/initialImages.json'
+import { useSystemStore } from '#store/systemStore'
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
@@ -51,38 +52,15 @@ const Gallery = () => {
     }
   })
 
-  // Initialize images from localStorage or fallback to initial Cloudinary URLs
-  const [galleryImages, setGalleryImages] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('gallery_images_v2')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // If parsed is empty array, fallback to initialImages (unless user explicitly deleted all, but for now this is safer)
-        return parsed.length > 0 ? parsed : initialImages
-      }
-      return initialImages
-    } catch (e) {
-      console.error('Error parsing gallery_images_v2 from localStorage', e)
-      return initialImages
-    }
-  })
+  // Use system store for gallery images
+  const { galleryImages, setGalleryImages, addGalleryImage, setWallpaper } = useSystemStore()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Debug logging
-  useEffect(() => {
-    console.log('Gallery Images:', galleryImages)
-  }, [galleryImages])
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('gallery_favorites', JSON.stringify(favorites))
   }, [favorites])
-
-  // Save gallery images to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('gallery_images_v2', JSON.stringify(galleryImages))
-  }, [galleryImages])
 
   // Handle Keyboard Navigation (Escape, Left, Right)
   useEffect(() => {
@@ -147,7 +125,7 @@ const Gallery = () => {
       })
       const data = await res.json()
       if (data.secure_url) {
-        setGalleryImages(prev => [data.secure_url, ...prev])
+        addGalleryImage(data.secure_url)
       }
     } catch (err) {
       console.error('Upload failed:', err)
@@ -158,14 +136,13 @@ const Gallery = () => {
     if (confirm('Are you sure you want to reset the gallery? This will remove all uploaded photos and restore the original collection.')) {
       setGalleryImages(initialImages)
       setFavorites([]) // Optional: reset favorites too if desired, or keep them. Let's reset for a clean slate as requested.
-      localStorage.setItem('gallery_images_v2', JSON.stringify(initialImages))
       localStorage.setItem('gallery_favorites', JSON.stringify([]))
     }
   }
 
   const handleDelete = (e: React.MouseEvent, src: string) => {
     e.stopPropagation()
-    setGalleryImages(prev => prev.filter(img => img !== src))
+    setGalleryImages(galleryImages.filter(img => img !== src))
     setFavorites(prev => prev.filter(fav => fav !== src))
     if (selectedImage === src) setSelectedImage(null)
   }
@@ -360,7 +337,19 @@ const Gallery = () => {
         {/* Lightbox Modal */}
         {selectedImage && (
             <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200" onClick={() => setSelectedImage(null)}>
-                <div className="absolute top-4 right-4 flex items-center gap-2">
+                <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
+                    <button
+                        className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (selectedImage) {
+                                setWallpaper(selectedImage)
+                            }
+                        }}
+                        title="Set as Wallpaper"
+                    >
+                        <Monitor className="w-6 h-6" />
+                    </button>
                     <button
                         className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
                         onClick={(e) => toggleFavorite(e, selectedImage)}

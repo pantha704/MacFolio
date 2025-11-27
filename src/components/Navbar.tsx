@@ -2,7 +2,6 @@ import dayjs from "dayjs"
 import { navIcons } from "#constants"
 import { useEffect, useState, useRef } from "react"
 import WifiMenu from "./menus/WifiMenu"
-import ControlCenter from "./menus/ControlCenter"
 import UserMenu from "./menus/UserMenu"
 import Spotlight from "./menus/Spotlight"
 
@@ -63,11 +62,9 @@ const Navbar = () => {
                         if (id === 1) toggleMenu(e, 'wifi')
                         if (id === 2) toggleMenu(e, 'search')
                         if (id === 3) toggleMenu(e, 'user')
-                        if (id === 4) toggleMenu(e, 'control')
                     }}
                     className={`p-1 rounded-md transition-colors ${
                         (activeMenu === 'wifi' && id === 1) ||
-                        (activeMenu === 'control' && id === 4) ||
                         (activeMenu === 'user' && id === 3)
                         ? 'bg-white/20' : 'hover:bg-white/10'
                     }`}
@@ -84,11 +81,6 @@ const Navbar = () => {
                   {activeMenu === 'user' && id === 3 && (
                       <div ref={menuRef} onClick={e => e.stopPropagation()}>
                           <UserMenu />
-                      </div>
-                  )}
-                  {activeMenu === 'control' && id === 4 && (
-                      <div ref={menuRef} onClick={e => e.stopPropagation()}>
-                          <ControlCenter />
                       </div>
                   )}
                 </li>
