@@ -7,9 +7,9 @@ const WifiMenu = () => {
   return (
     <div className="absolute top-8 right-0 w-80 bg-[#1e1e1e]/90 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl p-2 text-white z-50 animate-in fade-in slide-in-from-top-2 duration-200 font-sans">
       {/* Header: Wi-Fi | Toggle */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <span className="font-semibold text-sm">Wi-Fi</span>
-        <label className="relative inline-flex items-center cursor-pointer">
+      <div className="flex items-center justify-between px-3 py-2 gap-2">
+        <span className="font-semibold text-sm text-center w-12">Wi-Fi</span>
+        <label className="relative ml-4 inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
             className="sr-only peer"

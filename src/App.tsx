@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Navbar, Welcome, Dock, NoInternet } from "#components";
-import { Terminal, Safari, Finder, Gallery } from "#windows";
+import { Terminal, Safari, Finder, Gallery, Contact } from "#windows";
 import { Draggable } from "gsap/Draggable"
 import gsap from "gsap"
 import { useSystemStore } from "./store/systemStore"
@@ -53,6 +53,7 @@ const App = () => {
             <Finder />
             <Terminal />
             <Gallery />
+            <Contact />
         </>
       ) : (
         <NoInternet />
