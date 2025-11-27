@@ -49,7 +49,7 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
                 <img src="/images/logo.svg" alt="logo" className="pb-1 w-5 h-5"/>
-                <p className="text-sm font-bold tracking-wide hidden sm:block">Pratham&apos;s Portfolio</p>
+                <p className="text-sm font-bold tracking-wide hidden sm:block">MacFolio</p>
             </div>
           </div>
 
