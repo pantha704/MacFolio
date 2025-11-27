@@ -1,11 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
 import { locations } from '#constants'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const Finder = () => {
+const Finder = ({ windowData }: { windowData?: { activeSide?: keyof typeof locations } }) => {
   const [activeSide, setActiveSide] = useState<keyof typeof locations>('work')
+
+  useEffect(() => {
+    if (windowData?.activeSide) {
+        setActiveSide(windowData.activeSide)
+    }
+  }, [windowData])
 
   const [history, setHistory] = useState<Array<keyof typeof locations>>(['work'])
   const [currentIndex, setCurrentIndex] = useState(0)

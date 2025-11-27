@@ -9,6 +9,7 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
     // Performance optimization: Select only necessary state
     const isOpen = useWindowStore(state => state.windows[windowKey].isOpen)
     const zIndex = useWindowStore(state => state.windows[windowKey].zIndex)
+    const data = useWindowStore(state => state.windows[windowKey].data)
     const focusWindow = useWindowStore(state => state.focusWindow)
 
     const ref = useRef<HTMLDivElement>(null)
@@ -109,7 +110,8 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
         onMouseDown={() => focusWindow(windowKey)}
       >
         <div className="w-full h-full relative">
-          <Component {...props} />
+          <Component {...props} windowData={data} />
+          {/* Custom Resize Handle */}
           {/* Custom Resize Handle */}
           <div
             className="resize-handle"

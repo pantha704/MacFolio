@@ -84,11 +84,35 @@ const Gallery = () => {
     localStorage.setItem('gallery_images_v2', JSON.stringify(galleryImages))
   }, [galleryImages])
 
-  // Handle Escape key to close lightbox
+  // Handle Keyboard Navigation (Escape, Left, Right)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedImage) return
+
       if (e.key === 'Escape') {
         setSelectedImage(null)
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        // Determine current list based on active category
+        let currentList: string[] = []
+        if (activeCategory === 1) {
+            currentList = galleryImages
+        } else if (activeCategory === 5) {
+            currentList = favorites
+        }
+
+        if (currentList.length === 0) return
+
+        const currentIndex = currentList.indexOf(selectedImage)
+        if (currentIndex === -1) return
+
+        let newIndex = currentIndex
+        if (e.key === 'ArrowLeft') {
+            newIndex = (currentIndex - 1 + currentList.length) % currentList.length
+        } else if (e.key === 'ArrowRight') {
+            newIndex = (currentIndex + 1) % currentList.length
+        }
+
+        setSelectedImage(currentList[newIndex])
       }
     }
 
@@ -99,7 +123,7 @@ const Gallery = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedImage])
+  }, [selectedImage, activeCategory, galleryImages, favorites])
 
   const toggleFavorite = (e: React.MouseEvent, src: string) => {
     e.stopPropagation()
@@ -336,12 +360,21 @@ const Gallery = () => {
         {/* Lightbox Modal */}
         {selectedImage && (
             <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200" onClick={() => setSelectedImage(null)}>
-                <button
-                    className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
-                    onClick={() => setSelectedImage(null)}
-                >
-                    <X className="w-6 h-6" />
-                </button>
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                    <button
+                        className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
+                        onClick={(e) => toggleFavorite(e, selectedImage)}
+                        title={favorites.includes(selectedImage) ? "Remove from Favorites" : "Add to Favorites"}
+                    >
+                        <Heart className={`w-6 h-6 ${favorites.includes(selectedImage) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                    </button>
+                    <button
+                        className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
                 <img
                     src={selectedImage}
                     alt="Full screen"

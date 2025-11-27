@@ -7,7 +7,7 @@ import gsap from 'gsap'
 
 const Dock = () => {
   const dockRef = useRef<HTMLDivElement>(null)
-  const { windows, toggleWindow } = useWindowStore()
+  const { windows, toggleWindow, openWindow } = useWindowStore()
 
   useGSAP(() => {
     const dock = dockRef.current
@@ -62,6 +62,11 @@ const Dock = () => {
 
   const toggleApp = (app: {id: string, canOpen: boolean}) => {
     if (!app.canOpen) return
+
+    if (app.id === 'trash') {
+        openWindow('finder', { activeSide: 'trash' })
+        return
+    }
 
     if (!(app.id in windows)) return
 
