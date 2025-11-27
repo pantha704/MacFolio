@@ -194,10 +194,10 @@ const GitHubProfile = () => {
                     <GitBranch className="w-4 h-4" />
                     Repositories <span className="bg-[#30363d] px-2 rounded-full text-xs">{user.public_repos}</span>
                 </div>
-                <div className="flex items-center gap-2 py-2 text-[#8b949e] hover:text-white cursor-pointer border-b-2 border-transparent">
+                {/* <div className="flex items-center gap-2 py-2 text-[#8b949e] hover:text-white cursor-pointer border-b-2 border-transparent">
                     <Star className="w-4 h-4" />
                     Stars
-                </div>
+                </div> */}
             </div>
 
             {activeTab === 'overview' && (
