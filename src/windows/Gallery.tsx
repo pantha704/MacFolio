@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
 import { photosLinks } from '#constants'
-import { ChevronLeft, ChevronRight, Search, LayoutGrid, List, Image as ImageIcon, Heart, Map, Users, Clock, X, ZoomIn, Upload, Trash2, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Heart, Map, Users, Clock, X, ZoomIn, Upload, Trash2, RotateCcw } from 'lucide-react'
 
 import initialImages from '#constants/initialImages.json'
 
@@ -11,6 +11,33 @@ const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
 
 const Gallery = () => {
   const [activeCategory, setActiveCategory] = useState(1)
+  const [history, setHistory] = useState<number[]>([1])
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const navigate = (id: number) => {
+    const newHistory = history.slice(0, currentIndex + 1)
+    newHistory.push(id)
+    setHistory(newHistory)
+    setCurrentIndex(newHistory.length - 1)
+    setActiveCategory(id)
+  }
+
+  const goBack = () => {
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1
+      setCurrentIndex(newIndex)
+      setActiveCategory(history[newIndex])
+    }
+  }
+
+  const goForward = () => {
+    if (currentIndex < history.length - 1) {
+      const newIndex = currentIndex + 1
+      setCurrentIndex(newIndex)
+      setActiveCategory(history[newIndex])
+    }
+  }
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   // Initialize favorites from localStorage
@@ -232,8 +259,14 @@ const Gallery = () => {
         <WindowControls target="photos" />
 
         <div className="flex items-center gap-2 ml-4 text-gray-400">
-          <ChevronLeft className="icon w-5 h-5 cursor-pointer hover:text-white transition-colors" />
-          <ChevronRight className="icon w-5 h-5 cursor-pointer hover:text-white transition-colors" />
+          <ChevronLeft
+            className={`icon w-5 h-5 transition-colors ${currentIndex > 0 ? 'cursor-pointer hover:text-white text-gray-400' : 'text-gray-600 cursor-default'}`}
+            onClick={goBack}
+          />
+          <ChevronRight
+            className={`icon w-5 h-5 transition-colors ${currentIndex < history.length - 1 ? 'cursor-pointer hover:text-white text-gray-400' : 'text-gray-600 cursor-default'}`}
+            onClick={goForward}
+          />
         </div>
 
         <span className="font-semibold text-gray-200 ml-2">
@@ -264,19 +297,7 @@ const Gallery = () => {
             >
                 <RotateCcw className="w-4 h-4" />
             </button>
-            <div className="w-px h-4 bg-gray-700 mx-1" />
 
-            <LayoutGrid className="icon w-4 h-4 cursor-pointer hover:text-white transition-colors" />
-            <List className="icon w-4 h-4 cursor-pointer hover:text-white transition-colors" />
-
-            <div className="search flex items-center gap-2 bg-[#1a1a1a] px-2 py-1 rounded-md border border-gray-700/50 focus-within:border-blue-500/50 focus-within:bg-[#1a1a1a] transition-all shadow-inner w-40">
-                <Search className="w-3 h-3 text-gray-500" />
-                <input
-                    type="text"
-                    placeholder="Search"
-                    className="flex-1 bg-transparent outline-none text-xs text-gray-300 placeholder-gray-600"
-                />
-            </div>
         </div>
       </div>
 
@@ -284,14 +305,14 @@ const Gallery = () => {
         {/* Sidebar */}
         <div className="w-48 bg-[#252525]/80 backdrop-blur-xl border-r border-gray-800 p-2 overflow-y-auto text-sm select-none [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#484f58] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#5a626e] [scrollbar-width:thin] [scrollbar-color:#484f58_transparent]">
             <div className="mb-4">
-                {/* <p className="text-[10px] font-semibold text-gray-500 px-2 mb-1">Photos</p> */}
+                <p className="text-[10px] font-semibold text-gray-500 px-2 mb-1">Photos</p>
                 <ul>
                     {photosLinks.map((item) => {
                         return (
                         <li
                             key={item.id}
                             className={`flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-colors ${activeCategory === item.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}
-                            onClick={() => setActiveCategory(item.id)}
+                            onClick={() => navigate(item.id)}
                         >
                             {item.title === 'Library' && <ImageIcon className="w-4 h-4" />}
                             {item.title === 'Memories' && <Clock className="w-4 h-4" />}

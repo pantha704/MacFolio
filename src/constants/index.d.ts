@@ -49,6 +49,7 @@ export declare const locations: {
             name: string;
             icon: string;
             kind: string;
+            repoUrl: string;
             position: string;
             windowPosition: string;
             children: ({

@@ -116,11 +116,11 @@ const GitHubProfile = () => {
             <span className="font-semibold text-white">{user.login}</span>
         </div>
         <div className="hidden md:flex gap-4 text-sm font-semibold">
-            <a href="https://github.com/pulls" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Pull requests</a>
+            {/* <a href="https://github.com/pulls" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Pull requests</a>
             <a href="https://github.com/issues" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Issues</a>
             <a href="https://github.com/codespaces" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Codespaces</a>
             <a href="https://github.com/marketplace" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Marketplace</a>
-            <a href="https://github.com/explore" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Explore</a>
+            <a href="https://github.com/explore" target="_blank" rel="noreferrer" className="cursor-pointer hover:text-white">Explore</a> */}
         </div>
       </div>
 

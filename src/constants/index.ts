@@ -21,18 +21,18 @@ const navIcons = [
     id: 1,
     img: "/icons/wifi.svg",
   },
-  {
-    id: 2,
-    img: "/icons/search.svg",
-  },
-  {
-    id: 3,
-    img: "/icons/user.svg",
-  },
-  {
-    id: 4,
-    img: "/icons/mode.svg",
-  },
+  // {
+  //   id: 2,
+  //   img: "/icons/search.svg",
+  // },
+  // {
+  //   id: 3,
+  //   img: "/icons/user.svg",
+  // },
+  // {
+  //   id: 4,
+  //   img: "/icons/mode.svg",
+  // },
 ];
 
 const dockApps = [
@@ -203,6 +203,7 @@ const WORK_LOCATION = {
       name: "MacFolio",
       icon: "/images/folder.png",
       kind: "folder",
+      repoUrl: "https://github.com/pantha704/MacFolio",
       position: "top-10 left-5",
       windowPosition: "top-[5vh] left-5",
       children: [
@@ -247,6 +248,7 @@ const WORK_LOCATION = {
       name: "Solverse - Bounty Platform",
       icon: "/images/folder.png",
       kind: "folder",
+      repoUrl: "https://github.com/pantha704/solverse",
       position: "top-52 right-80",
       windowPosition: "top-[20vh] left-7",
       children: [
@@ -282,6 +284,7 @@ const WORK_LOCATION = {
       name: "Solana Starter Kit",
       icon: "/images/folder.png",
       kind: "folder",
+      repoUrl: "https://github.com/pantha704/sol-starter-kit",
       position: "top-10 left-80",
       windowPosition: "top-[33vh] left-7",
       children: [
@@ -306,6 +309,247 @@ const WORK_LOCATION = {
           kind: "file",
           fileType: "url",
           href: "https://github.com/pantha704/sol-starter-kit",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 4
+    {
+      id: 8,
+      name: "Obsidian",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/obsidian",
+      position: "top-52 left-5",
+      windowPosition: "top-[10vh] left-10",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "A Python project.",
+            "Language: Python",
+            "Stars: 3"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/obsidian",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 5
+    {
+      id: 9,
+      name: "Blueshift Flash Loan",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/blueshift_anchor_flash_loan",
+      position: "top-10 right-20",
+      windowPosition: "top-[20vh] left-10",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "A Rust project for Anchor Flash Loans.",
+            "Language: Rust",
+            "Stars: 1"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/blueshift_anchor_flash_loan",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 6
+    {
+      id: 10,
+      name: "Escrow Dapp",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/escrow-dapp",
+      position: "top-52 right-20",
+      windowPosition: "top-[30vh] left-10",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "A decentralized escrow application.",
+            "Language: TypeScript",
+            "Stars: 1"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/escrow-dapp",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 7
+    {
+      id: 11,
+      name: "Python Projects",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/python_projects",
+      position: "top-10 left-80",
+      windowPosition: "top-[15vh] left-15",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "A collection of Python projects.",
+            "Language: Python"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/python_projects",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 8
+    {
+      id: 12,
+      name: "Pomodoro",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/Pomodoro",
+      position: "top-52 left-80",
+      windowPosition: "top-[25vh] left-15",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "Boost your productivity with this timer based on Pomodoro Technique!",
+            "Language: Python"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/Pomodoro",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 9
+    {
+      id: 13,
+      name: "Backroads App",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/Backroads-App",
+      position: "top-10 right-80",
+      windowPosition: "top-[35vh] left-15",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "A travel app project.",
+            "Language: CSS"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/Backroads-App",
+          position: "top-10 right-20",
+        },
+      ],
+    },
+
+    // ▶ Project 10
+    {
+      id: 14,
+      name: "Excalidraw Clone",
+      icon: "/images/folder.png",
+      kind: "folder",
+      repoUrl: "https://github.com/pantha704/excalidraw",
+      position: "top-52 right-80",
+      windowPosition: "top-[45vh] left-15",
+      children: [
+        {
+          id: 1,
+          name: "Details.txt",
+          icon: "/images/txt.png",
+          kind: "file",
+          fileType: "txt",
+          position: "top-5 left-10",
+          description: [
+            "Excalidraw clone.",
+            "Language: TypeScript"
+          ],
+        },
+        {
+          id: 2,
+          name: "Repository",
+          icon: "/images/safari.png",
+          kind: "file",
+          fileType: "url",
+          href: "https://github.com/pantha704/excalidraw",
           position: "top-10 right-20",
         },
       ],

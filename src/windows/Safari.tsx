@@ -2,7 +2,7 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
-import { PanelLeft, ChevronLeft, ChevronRight, ShieldHalf, Search, Share, Plus, Copy, RotateCw } from 'lucide-react'
+import { PanelLeft, ChevronLeft, ChevronRight, Search, RotateCw } from 'lucide-react'
 import GitHubProfile from '#components/apps/GitHubProfile'
 import { FaGithub } from 'react-icons/fa'
 // import { FcGoogle } from 'react-icons/fc'
@@ -56,8 +56,6 @@ const Safari = () => {
     } else {
         // External Link -> Open in new tab
         window.open(url, '_blank')
-        // Don't change view, just keep current state or maybe show a "Opened in new tab" toast?
-        // For now, we'll just return.
         return
     }
 
@@ -67,19 +65,22 @@ const Safari = () => {
     setCurrentIndex(newHistory.length - 1)
   }
 
+  const loadUrl = (url: string) => {
+      if (url.includes('github.com')) {
+          setActiveView('github')
+          setCurrentUrl(url)
+      } else {
+          setActiveView('start')
+          setCurrentUrl('')
+      }
+  }
+
   const goBack = () => {
     if (currentIndex > 0) {
       const newIndex = currentIndex - 1
       setCurrentIndex(newIndex)
       const prevUrl = history[newIndex]
-
-      if (!prevUrl) {
-          goHome()
-      } else {
-          navigate(prevUrl)
-      }
-    } else {
-        goHome()
+      loadUrl(prevUrl)
     }
   }
 
@@ -87,7 +88,8 @@ const Safari = () => {
     if (currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       setCurrentIndex(newIndex)
-      navigate(history[newIndex])
+      const nextUrl = history[newIndex]
+      loadUrl(nextUrl)
     }
   }
 
@@ -99,11 +101,7 @@ const Safari = () => {
     setTimeout(() => setIsLoading(false), 500)
   }
 
-  const goHome = () => {
-    setActiveView('start')
-    setCurrentUrl('')
-    setIsLoading(false)
-  }
+
 
   return (
     <div className="w-full h-full flex flex-col bg-[#1e1e1e] rounded-xl overflow-hidden font-georama relative shadow-2xl border border-gray-800">
@@ -141,11 +139,11 @@ const Safari = () => {
                 </div>
 
                 <div className="flex-1 flex items-center justify-center gap-3">
-                    <ShieldHalf className="icon w-4 h-4 text-gray-500" />
+                    {/* <ShieldHalf className="icon w-4 h-4 text-gray-500" /> */}
 
                     <div className="search flex items-center gap-2 bg-[#1a1a1a] px-3 py-1.5 rounded-lg w-full max-w-xl border border-transparent focus-within:border-blue-500/50 transition-all shadow-inner">
                         <div className="text-gray-500 text-xs flex items-center gap-1">
-                            <span className="text-gray-400">AA</span>
+                            <span className="text-gray-400"></span>
                         </div>
                         <input
                             ref={inputRef}
@@ -162,11 +160,7 @@ const Safari = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-4 text-gray-400">
-                    <Share className="icon w-4 h-4 cursor-pointer hover:text-white transition-colors" />
-                    <Plus className="icon w-4 h-4 cursor-pointer hover:text-white transition-colors" />
-                    <Copy className="icon w-4 h-4 cursor-pointer hover:text-white transition-colors" />
-                </div>
+
             </>
         )}
       </div>
