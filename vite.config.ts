@@ -19,6 +19,7 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
+
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -29,6 +30,18 @@ export default defineConfig({
       '#windows': resolve(__dirname, './src/windows'),
       '#context': resolve(__dirname, './src/context'),
       '#utils': resolve(__dirname, './src/utils'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'icons': ['lucide-react', 'react-icons'],
+          'gsap': ['gsap', '@gsap/react'],
+          'terminal': ['xterm', '@xterm/addon-fit'],
+        },
+      },
     },
   },
 })

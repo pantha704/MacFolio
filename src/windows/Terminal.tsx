@@ -5,9 +5,9 @@ import TerminalBox from '#components/TerminalBox'
 const Terminal = () => {
   return (
     <>
-     <div className="window-header">
+     <div className="window-header bg-transparent! border-none!">
       <WindowControls target="terminal"/>
-      <h2>Terminal</h2>
+      <h2 className="text-gray-500">Terminal</h2>
      </div>
      <div className="h-[calc(100%-2.5rem)] w-full">
        <TerminalBox />

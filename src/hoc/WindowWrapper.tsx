@@ -13,6 +13,7 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
 
     const ref = useRef<HTMLDivElement>(null)
     const [isRendered, setIsRendered] = useState(isOpen)
+    const [isInteracting, setIsInteracting] = useState(false)
 
     // Handle mounting/unmounting for animations
     useGSAP(() => {
@@ -57,6 +58,8 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
       const [instance] = Draggable.create(el, {
         trigger: header || el,
         onPress: () => focusWindow(windowKey),
+        onDragStart: () => setIsInteracting(true),
+        onDragEnd: () => setIsInteracting(false),
         allowEventDefault: true, // Allow interaction with child elements
         dragClickables: false, // Prevent dragging when clicking interactive elements
       })
@@ -64,17 +67,54 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
       return () => instance.kill()
     }, [isRendered]) // Re-create draggable when rendered state changes
 
+    // Custom Resize Logic
+    const handleResizeStart = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsInteracting(true)
+
+        const startX = e.clientX
+        const startY = e.clientY
+        const startWidth = ref.current?.offsetWidth || 0
+        const startHeight = ref.current?.offsetHeight || 0
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            if (!ref.current) return
+            const newWidth = startWidth + (moveEvent.clientX - startX)
+            const newHeight = startHeight + (moveEvent.clientY - startY)
+
+            // Enforce min dimensions
+            ref.current.style.width = `${Math.max(300, newWidth)}px`
+            ref.current.style.height = `${Math.max(200, newHeight)}px`
+        }
+
+        const handleMouseUp = () => {
+            setIsInteracting(false)
+            window.removeEventListener('mousemove', handleMouseMove)
+            window.removeEventListener('mouseup', handleMouseUp)
+        }
+
+        window.addEventListener('mousemove', handleMouseMove)
+        window.addEventListener('mouseup', handleMouseUp)
+    }
+
     if (!isRendered) return null
 
     return (
       <section
         id={windowKey}
         ref={ref}
-        className='absolute window resize overflow-hidden min-w-[300px] min-h-[200px]'
+        className={`absolute window overflow-hidden min-w-[300px] min-h-[200px] ${isInteracting ? 'interacting' : ''}`}
         style={{ zIndex, display: 'block' }} // Ensure display is block when rendered
+        onMouseDown={() => focusWindow(windowKey)}
       >
-        <div className="w-full h-full">
+        <div className="w-full h-full relative">
           <Component {...props} />
+          {/* Custom Resize Handle */}
+          <div
+            className="resize-handle"
+            onMouseDown={handleResizeStart}
+          />
         </div>
       </section>
     )

@@ -118,26 +118,24 @@ body {
     @apply flex items-center justify-between px-4 py-3 rounded-t-lg bg-gray-50 border-b border-gray-200 select-none text-sm text-gray-400;
   }
 
-  /* Global Scrollbar Styles for Windows */
-  .window ::-webkit-scrollbar {
+  /* Prevent iframe interaction during drag/resize to fix sticking */
+  .window.interacting iframe {
+    pointer-events: none;
+  }
+
+  .resize-handle {
+    @apply absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-50;
+    /* Optional: Add a visual indicator like a corner grip */
+    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.1) 50%);
+  }
+
+  /* Global Scrollbar Styles for Windows - REMOVED to fix Safari */
+  /* .window ::-webkit-scrollbar {
     width: 10px;
-  }
-
-  .window ::-webkit-scrollbar-track {
-    background: #1e1e1e;
-  }
-
-  .window ::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 5px;
-  }
-
-  .window ::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
+  } */
 
   #safari {
-    @apply w-4xl absolute top-40 left-2/12 bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
+    @apply w-5xl h-[600px] absolute top-40 left-2/12 bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
 
     .search {
       @apply flex items-center gap-3 w-2/3 bg-white border border-gray-300 rounded-lg px-3 py-2;
@@ -182,6 +180,24 @@ body {
 
   #terminal {
     @apply w-4xl h-140 absolute top-32 left-1/12 bg-[#1e1e1e] shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
+
+    /* Custom Scrollbar for Terminal */
+    .xterm-viewport::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .xterm-viewport::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+
+    .xterm-viewport::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 5px;
+    }
+
+    .xterm-viewport::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
 
 
     h2 {
@@ -256,7 +272,7 @@ body {
   }
 
   #photos {
-    @apply max-w-3xl absolute top-96 left-1/2 -translate-y-1/2 bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
+    @apply w-4xl h-[600px] absolute top-20 left-1/4 bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
 
     .sidebar {
       @apply w-3/12 flex-none bg-gray-50 border-r border-gray-200 flex flex-col p-5;

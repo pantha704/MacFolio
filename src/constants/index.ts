@@ -38,13 +38,13 @@ const navIcons = [
 const dockApps = [
   {
     id: "finder",
-    name: "Portfolio", // was "Finder"
+    name: "Finder", // was "Finder"
     icon: "finder.png",
     canOpen: true,
   },
   {
     id: "safari",
-    name: "Articles", // was "Safari"
+    name: "Safari", // was "Safari"
     icon: "safari.png",
     canOpen: true,
   },
@@ -56,13 +56,13 @@ const dockApps = [
   },
   {
     id: "contact",
-    name: "Contact", // or "Get in touch"
+    name: "Get in touch", // or "Get in touch"
     icon: "contact.png",
     canOpen: true,
   },
   {
     id: "terminal",
-    name: "Skills", // was "Terminal"
+    name: "Terminal", // was "Terminal"
     icon: "terminal.png",
     canOpen: true,
   },
@@ -163,44 +163,20 @@ const photosLinks = [
     icon: "/icons/gicon1.svg",
     title: "Library",
   },
-  {
-    id: 2,
-    icon: "/icons/gicon2.svg",
-    title: "Memories",
-  },
-  {
-    id: 3,
-    icon: "/icons/file.svg",
-    title: "Places",
-  },
-  {
-    id: 4,
-    icon: "/icons/gicon4.svg",
-    title: "People",
-  },
+  // {
+  //   id: 2,
+  //   icon: "/icons/gicon2.svg",
+  //   title: "Memories",
+  // },
+  // {
+  //   id: 3,
+  //   icon: "/icons/file.svg",
+  //   title: "Places",
+  // },
   {
     id: 5,
     icon: "/icons/gicon5.svg",
     title: "Favorites",
-  },
-];
-
-const gallery = [
-  {
-    id: 1,
-    img: "/images/gal1.png",
-  },
-  {
-    id: 2,
-    img: "/images/gal2.png",
-  },
-  {
-    id: 3,
-    img: "/images/gal3.png",
-  },
-  {
-    id: 4,
-    img: "/images/gal4.png",
   },
 ];
 
@@ -212,7 +188,6 @@ export {
   techStack,
   socials,
   photosLinks,
-  gallery,
 };
 
 const WORK_LOCATION = {
@@ -225,52 +200,43 @@ const WORK_LOCATION = {
     // ▶ Project 1
     {
       id: 5,
-      name: "Nike Ecommerce Website Application",
+      name: "MacFolio",
       icon: "/images/folder.png",
       kind: "folder",
-      position: "top-10 left-5", // icon position inside Finder
-      windowPosition: "top-[5vh] left-5", // optional: Finder window position
+      position: "top-10 left-5",
+      windowPosition: "top-[5vh] left-5",
       children: [
         {
           id: 1,
-          name: "Nike Project.txt",
+          name: "Project Details.txt",
           icon: "/images/txt.png",
           kind: "file",
           fileType: "txt",
           position: "top-5 left-10",
           description: [
-            "The Nike eCommerce website is a sleek and modern platform designed for shopping the latest Nike collections.",
-            "Instead of a simple online store, it delivers an immersive experience with bold visuals, interactive product displays, and smooth navigation.",
-            "Think of it like walking into a flagship Nike store—but right from your phone or laptop.",
-            "It's built with Next.js and Tailwind, ensuring fast performance, responsive design, and a clean, premium look.",
+            "MacFolio is a pixel-perfect replica of macOS built entirely on the web.",
+            "It features a fully functional Finder, Safari browser with real-time data fetching, interactive Dock, and a working Terminal.",
+            "Built with React, TypeScript, and Vite, it demonstrates advanced frontend engineering, state management, and component architecture.",
+            "It's not just a portfolio; it's an immersive operating system experience in the browser.",
           ],
         },
         {
           id: 2,
-          name: "nike.com",
+          name: "Live Demo",
           icon: "/images/safari.png",
           kind: "file",
           fileType: "url",
-          href: "https://youtu.be/fZdTYswuZjU?si=Awjl-pIst9e09_UU",
+          href: "https://mac-folio-seven.vercel.app/", // Assuming this is the link or placeholder
           position: "top-10 right-20",
         },
         {
           id: 4,
-          name: "nike.png",
+          name: "preview.png",
           icon: "/images/image.png",
           kind: "file",
           fileType: "img",
           position: "top-52 right-80",
-          imageUrl: "/images/project-1.png",
-        },
-        {
-          id: 5,
-          name: "Design.fig",
-          icon: "/images/plain.png",
-          kind: "file",
-          fileType: "fig",
-          href: "https://google.com",
-          position: "top-60 right-20",
+          imageUrl: "/images/wallpaper.png", // Using existing wallpaper as placeholder
         },
       ],
     },
@@ -278,7 +244,7 @@ const WORK_LOCATION = {
     // ▶ Project 2
     {
       id: 6,
-      name: "AI Resume Analyzer",
+      name: "Solverse - Bounty Platform",
       icon: "/images/folder.png",
       kind: "folder",
       position: "top-52 right-80",
@@ -286,44 +252,26 @@ const WORK_LOCATION = {
       children: [
         {
           id: 1,
-          name: "AI Resume Analyzer Project.txt",
+          name: "Solverse Details.txt",
           icon: "/images/txt.png",
           kind: "file",
           fileType: "txt",
           position: "top-5 right-10",
           description: [
-            "AI Resume Analyzer is a smart tool that helps you perfect your resume with instant feedback.",
-            "Instead of guessing what recruiters want, you get AI-powered insights on keywords, formatting, and overall impact.",
-            "Think of it like having a career coach—pointing out strengths, fixing weaknesses, and boosting your chances of landing interviews.",
-            "It's built with Next.js and Tailwind, so it runs fast, looks professional, and works seamlessly on any device.",
+            "Solverse is a decentralized bounty platform connecting developers with opportunities in the Solana ecosystem.",
+            "It leverages smart contracts to ensure secure, transparent payments and automated task verification.",
+            "Designed to empower the gig economy in Web3, making it easier for projects to find talent and for builders to earn.",
+            "Tech Stack: Next.js, Solana (Anchor), Rust, and Tailwind CSS.",
           ],
         },
         {
           id: 2,
-          name: "ai-resume-analyzer.com",
+          name: "solverse.app",
           icon: "/images/safari.png",
           kind: "file",
           fileType: "url",
-          href: "https://youtu.be/iYOz165wGkQ?si=R1hs8Legl200m0Cl",
+          href: "https://github.com/pantha704/solverse",
           position: "top-20 left-20",
-        },
-        {
-          id: 4,
-          name: "ai-resume-analyzer.png",
-          icon: "/images/image.png",
-          kind: "file",
-          fileType: "img",
-          position: "top-52 left-80",
-          imageUrl: "/images/project-2.png",
-        },
-        {
-          id: 5,
-          name: "Design.fig",
-          icon: "/images/plain.png",
-          kind: "file",
-          fileType: "fig",
-          href: "https://google.com",
-          position: "top-60 left-5",
         },
       ],
     },
@@ -331,7 +279,7 @@ const WORK_LOCATION = {
     // ▶ Project 3
     {
       id: 7,
-      name: "Food Delivery App",
+      name: "Solana Starter Kit",
       icon: "/images/folder.png",
       kind: "folder",
       position: "top-10 left-80",
@@ -339,44 +287,26 @@ const WORK_LOCATION = {
       children: [
         {
           id: 1,
-          name: "Food Delivery App Project.txt",
+          name: "Readme.txt",
           icon: "/images/txt.png",
           kind: "file",
           fileType: "txt",
           position: "top-5 left-10",
           description: [
-            "Our Food Delivery App is a fast and convenient way to order meals from your favorite restaurants.",
-            "Instead of making calls or waiting in line, you can browse menus, customize orders, and track deliveries in real time.",
-            "Think of it like having your favorite restaurants in your pocket—ready to deliver anytime, anywhere.",
-            "It’s built with React Native, so it works smoothly on both iOS and Android with a clean, modern design.",
+            "The Solana Starter Kit is a comprehensive boilerplate for building decentralized applications (dApps) on Solana.",
+            "It includes pre-configured wallet adapters, token integration examples, and basic smart contract interactions.",
+            "Created to accelerate development for new builders entering the Solana ecosystem.",
+            "Features: Wallet Adapter, Anchor Framework setup, and reusable UI components.",
           ],
         },
         {
           id: 2,
-          name: "food-delivery-app.com",
+          name: "Repository",
           icon: "/images/safari.png",
           kind: "file",
           fileType: "url",
-          href: "https://youtu.be/LKrX390fJMw?si=cExkuVhf2DTV9G2-",
+          href: "https://github.com/pantha704/sol-starter-kit",
           position: "top-10 right-20",
-        },
-        {
-          id: 4,
-          name: "food-delivery-app.png",
-          icon: "/images/image.png",
-          kind: "file",
-          fileType: "img",
-          position: "top-52 right-80",
-          imageUrl: "/images/project-3.png",
-        },
-        {
-          id: 5,
-          name: "Design.fig",
-          icon: "/images/plain.png",
-          kind: "file",
-          fileType: "fig",
-          href: "https://google.com",
-          position: "top-60 right-20",
         },
       ],
     },
@@ -397,25 +327,7 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "img",
       position: "top-10 left-5",
-      imageUrl: "/images/adrian.jpg",
-    },
-    {
-      id: 2,
-      name: "casual-me.png",
-      icon: "/images/image.png",
-      kind: "file",
-      fileType: "img",
-      position: "top-28 right-72",
-      imageUrl: "/images/adrian-2.jpg",
-    },
-    {
-      id: 3,
-      name: "conference-me.png",
-      icon: "/images/image.png",
-      kind: "file",
-      fileType: "img",
-      position: "top-52 left-80",
-      imageUrl: "/images/adrian-3.jpeg",
+      imageUrl: "/images/adrian.jpg", // Keeping existing image for now, can be updated if user uploads one
     },
     {
       id: 4,
@@ -424,13 +336,13 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "txt",
       position: "top-60 left-5",
-      subtitle: "Meet the Developer Behind the Code",
+      subtitle: "Full Stack Developer & Blockchain Engineer",
       image: "/images/adrian.jpg",
       description: [
-        "Hey! I’m Adrian 👋, a web developer who enjoys building sleek, interactive websites that actually work well.",
-        "I specialize in JavaScript, React, and Next.js—and I love making things feel smooth, fast, and just a little bit delightful.",
-        "I’m big on clean UI, good UX, and writing code that doesn’t need a search party to debug.",
-        "Outside of dev work, you'll find me tweaking layouts at 2AM, sipping overpriced coffee, or impulse-buying gadgets I absolutely convinced myself I needed 😅",
+        "Hey! I’m Pratham 👋, a Full Stack Developer and Blockchain Enthusiast.",
+        "I specialize in building high-performance web applications and decentralized solutions on Solana.",
+        "My stack includes React, Next.js, TypeScript, Rust, and Anchor. I love turning complex ideas into elegant, user-friendly code.",
+        "When I'm not coding, I'm exploring the latest in Web3, contributing to open source, or optimizing my terminal config.",
       ],
     },
   ],

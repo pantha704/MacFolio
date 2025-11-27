@@ -36,11 +36,7 @@ declare const photosLinks: {
     icon: string;
     title: string;
 }[];
-declare const gallery: {
-    id: number;
-    img: string;
-}[];
-export { navLinks, navIcons, dockApps, blogPosts, techStack, socials, photosLinks, gallery, };
+export { navLinks, navIcons, dockApps, blogPosts, techStack, socials, photosLinks, };
 export declare const locations: {
     work: {
         id: number;
