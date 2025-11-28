@@ -99,10 +99,6 @@ const Welcome = () => {
     <section id="welcome">
       <p ref={subtitleRef} className="cursor-default w-fit mx-auto mix-blend-difference text-white/90">{renderText("Hey, I'm Pratham! Welcome to my", "text-3xl font-georama", 100)}</p>
       <h1 ref={titleRef} className='mt-7 cursor-default w-fit mx-auto mix-blend-difference text-white/90'>{renderText("portfolio", "text-9xl italic font-georama")}</h1>
-
-      <div className='small-screen'>
-        <p>This Portfolio is designed for desktop/tablet screens only :(</p>
-      </div>
     </section>
   )
 }
