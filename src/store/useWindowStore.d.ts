@@ -3,6 +3,8 @@ type WindowConfigType = typeof WINDOW_CONFIG;
 export type WindowKey = keyof WindowConfigType;
 interface WindowItem {
     isOpen: boolean;
+    isMinimized: boolean;
+    isMaximized: boolean;
     zIndex: number;
     data: any;
 }
@@ -11,6 +13,9 @@ interface WindowState {
     nextZIndex: number;
     openWindow: (windowKey: WindowKey, data?: any) => void;
     closeWindow: (windowKey: WindowKey) => void;
+    minimizeWindow: (windowKey: WindowKey) => void;
+    maximizeWindow: (windowKey: WindowKey) => void;
+    restoreWindow: (windowKey: WindowKey) => void;
     focusWindow: (windowKey: WindowKey) => void;
     toggleWindow: (windowKey: WindowKey) => void;
     updateWindowData: (windowKey: WindowKey, data: any) => void;

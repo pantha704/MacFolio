@@ -53,7 +53,7 @@ const Gallery = () => {
   })
 
   // Use system store for gallery images
-  const { galleryImages, setGalleryImages, addGalleryImage, setWallpaper } = useSystemStore()
+  const { galleryImages, setGalleryImages, addGalleryImage, setWallpaper, wallpaper } = useSystemStore()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -339,14 +339,18 @@ const Gallery = () => {
             <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200" onClick={() => setSelectedImage(null)}>
                 <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
                     <button
-                        className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors cursor-pointer"
+                        className={`p-2 rounded-full transition-colors cursor-pointer ${wallpaper === selectedImage ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-white/10 text-white hover:bg-white/20'}`}
                         onClick={(e) => {
                             e.stopPropagation()
                             if (selectedImage) {
-                                setWallpaper(selectedImage)
+                                if (wallpaper === selectedImage) {
+                                    setWallpaper('/images/wallpaper.png') // Default wallpaper
+                                } else {
+                                    setWallpaper(selectedImage)
+                                }
                             }
                         }}
-                        title="Set as Wallpaper"
+                        title={wallpaper === selectedImage ? "Reset Wallpaper" : "Set as Wallpaper"}
                     >
                         <Monitor className="w-6 h-6" />
                     </button>

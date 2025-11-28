@@ -7,7 +7,7 @@ import gsap from 'gsap'
 
 const Dock = () => {
   const dockRef = useRef<HTMLDivElement>(null)
-  const { windows, toggleWindow, openWindow } = useWindowStore()
+  const { windows, openWindow } = useWindowStore()
 
   useGSAP(() => {
     const dock = dockRef.current
@@ -68,9 +68,35 @@ const Dock = () => {
         return
     }
 
-    if (!(app.id in windows)) return
+    const { windows: currentWindows } = useWindowStore.getState() // Get fresh state directly
+    if (!(app.id in currentWindows)) return
 
-    toggleWindow(app.id as keyof typeof windows)
+    const win = currentWindows[app.id as keyof typeof currentWindows]
+
+    // If closed, open it
+    if (!win.isOpen) {
+        openWindow(app.id as keyof typeof currentWindows)
+        return
+    }
+
+    // If minimized, restore it
+    if (win.isMinimized) {
+        useWindowStore.getState().restoreWindow(app.id as keyof typeof currentWindows)
+        return
+    }
+
+    // If open and active (topmost), minimize it
+    // We need a way to check if it's the topmost window.
+    // For now, we can check if it has the highest zIndex among open windows.
+    const openWindows = Object.values(currentWindows).filter(w => w.isOpen && !w.isMinimized)
+    const maxZ = Math.max(...openWindows.map(w => w.zIndex), 0)
+
+    if (win.zIndex === maxZ) {
+        useWindowStore.getState().minimizeWindow(app.id as keyof typeof currentWindows)
+    } else {
+        // If open but not active, focus it
+        useWindowStore.getState().focusWindow(app.id as keyof typeof currentWindows)
+    }
   }
 
   return (
