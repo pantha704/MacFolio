@@ -49,40 +49,14 @@ export declare const locations: {
             name: string;
             icon: string;
             kind: string;
-            repoUrl: string;
-            position: string;
-            windowPosition: string;
-            children: ({
-                id: number;
-                name: string;
-                icon: string;
-                kind: string;
-                fileType: string;
-                position: string;
-                description: string[];
-                href?: undefined;
-                imageUrl?: undefined;
-            } | {
+            children: {
                 id: number;
                 name: string;
                 icon: string;
                 kind: string;
                 fileType: string;
                 href: string;
-                position: string;
-                description?: undefined;
-                imageUrl?: undefined;
-            } | {
-                id: number;
-                name: string;
-                icon: string;
-                kind: string;
-                fileType: string;
-                position: string;
-                imageUrl: string;
-                description?: undefined;
-                href?: undefined;
-            })[];
+            }[];
         }[];
     };
     about: {

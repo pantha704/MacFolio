@@ -89,23 +89,23 @@ body {
   }
 
   #window-controls {
-    @apply flex gap-2;
+    @apply flex gap-2 max-sm:gap-3.5;
 
     .close {
-      @apply size-3.5 rounded-full bg-[#ff6157] cursor-pointer;
+      @apply size-3.5 rounded-full bg-[#ff6157] cursor-pointer max-sm:size-5;
     }
 
     .minimize {
-      @apply size-3.5 rounded-full bg-[#ffc030] cursor-pointer;
+      @apply size-3.5 rounded-full bg-[#ffc030] cursor-pointer max-sm:size-5;
     }
 
     .maximize {
-      @apply size-3.5 rounded-full bg-[#2acb42] cursor-pointer;
+      @apply size-3.5 rounded-full bg-[#2acb42] cursor-pointer max-sm:size-5;
     }
   }
 
   .window-header {
-    @apply flex items-center justify-between px-4 py-3 rounded-t-lg bg-gray-50 border-b border-gray-200 select-none text-sm text-gray-400;
+    @apply flex items-center justify-between px-4 py-3 rounded-t-lg bg-gray-50 border-b border-gray-200 select-none text-sm text-gray-400 max-sm:py-4;
   }
 
   /* Prevent iframe interaction during drag/resize to fix sticking */
