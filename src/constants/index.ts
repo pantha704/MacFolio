@@ -209,7 +209,7 @@ const WORK_LOCATION = {
           icon: "/images/safari.png",
           kind: "file",
           fileType: "url",
-          href: "https://mac-folio-seven.vercel.app/",
+          href: "https://mac-folio-three.vercel.app/",
         },
         {
           id: 2,
