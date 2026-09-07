@@ -116,7 +116,7 @@ const Finder = ({ windowData }: { windowData?: FinderWindowData }) => {
       </div>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <aside className="w-40 sm:w-48 flex-none bg-white/[0.045] backdrop-blur-2xl border-r border-white/10 p-2 overflow-y-auto text-sm select-none">
+        <aside className="w-32 sm:w-48 flex-none bg-white/[0.045] backdrop-blur-2xl border-r border-white/10 p-2 overflow-y-auto text-sm select-none">
           <p className="text-[10px] font-semibold text-gray-500 px-2 mb-1 mt-1">Favorites</p>
           <ul>
             {Object.entries(locations).map(([key, location]) => (
@@ -141,7 +141,13 @@ const Finder = ({ windowData }: { windowData?: FinderWindowData }) => {
                 type="button"
                 key={child.id}
                 className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 ${selectedId === child.id ? 'bg-blue-500/20 border-blue-400/30' : 'border-transparent hover:bg-white/5 hover:border-white/5'}`}
-                onClick={() => setSelectedId(child.id)}
+                onClick={() => {
+                  if (window.matchMedia('(pointer: coarse)').matches) {
+                    openItem(child)
+                  } else {
+                    setSelectedId(child.id)
+                  }
+                }}
                 onDoubleClick={() => openItem(child)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') openItem(child)
