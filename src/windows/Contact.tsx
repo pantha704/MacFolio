@@ -35,7 +35,7 @@ const Contact = () => {
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
               Pratham Jaiswal
             </h1>
-            <p className="text-gray-400 text-lg">Full Stack Developer & Blockchain Enthusiast</p>
+            <p className="text-gray-400 text-lg">Full-Stack · Web3 · AI / Automation</p>
 
             <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-2">
               <div className="flex items-center gap-1">
