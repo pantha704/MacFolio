@@ -1,78 +1,125 @@
 # MacFolio
 
-A pixel-perfect, browser-based recreation of the macOS experience. Built with React, TypeScript, and Vite to demonstrate advanced frontend engineering capabilities.
+An interactive, macOS-inspired engineering portfolio for **Pratham Jaiswal**.
 
-![MacFolio Preview](https://img.shields.io/badge/Status-Live-success?style=for-the-badge)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)
+**Live:** https://mac-folio-three.vercel.app/
 
-## Overview
+MacFolio is intentionally more than a landing page. It behaves like a small desktop environment so visitors can explore projects, GitHub, a real browser-based terminal, photos, resume, and contact information without losing the simplicity of a portfolio.
 
-MacFolio is more than just a portfolio; it's an immersive operating system simulation running entirely in the browser. It features a fully functional window management system, a dynamic dock, and a suite of integrated applications that mirror their native counterparts.
+> Not affiliated with or endorsed by Apple. macOS names and visual references are used only as interface inspiration.
 
-## Key Features
+## Fast path
 
-- **Desktop Environment**:
+You do not need to learn the desktop to use the portfolio.
 
-  - **Window Management**: Draggable, resizable, and stackable windows with z-index handling.
-  - **Dock**: Interactive dock with magnification effects and app launching.
-  - **Menu Bar**: Functional clock, control center, and system menus.
-  - **Wallpaper Engine**: Set any image from the Gallery as your desktop background with a single click.
+- Press **⌘ K** on macOS or **Ctrl K** elsewhere to open Spotlight.
+- Search for a project, **Resume**, **GitHub**, **Terminal**, **Photos**, or **Contact**.
+- Use **Alt W** to close the active window.
 
-- **Integrated Applications**:
+## What works
 
-  - **Finder**: Navigate a virtual file system with support for nested folders and file previews.
-  - **Safari**: A functional browser simulation for viewing project demos and articles.
-  - **Gallery**: Browse photos, manage favorites, and customize your wallpaper.
-  - **Terminal**: A fully interactive terminal emulator (xterm.js) with custom commands.
-  - **Contact**: A sleek, animated card for professional outreach.
+- **Window manager** — draggable, resizable, focusable, minimizable, maximizable windows with geometry-preserving restore.
+- **Finder** — navigable project folders plus functional image, text, and PDF previews.
+- **Spotlight** — real search/launcher with keyboard navigation and project deep-links.
+- **Safari** — portfolio browser surface with a resilient GitHub profile view and graceful API-rate-limit fallback.
+- **Terminal** — xterm.js backed by a real WebContainer shell, booted only when Terminal is opened.
+- **Photos** — gallery, favorites, lightbox, wallpaper changes, and privacy-preserving local photo additions.
+- **Menu bar + Dock** — working app launcher, Wi-Fi state, current time, keyboard-accessible controls, and reduced-motion support.
+- **Responsive behavior** — touch-friendly Finder interactions and full-screen mobile windows.
 
-- **Technical Highlights**:
-  - **Performance**: Built on Vite for lightning-fast HMR and production builds.
-  - **State Management**: Zustand for global state (wallpaper, wifi, window status).
-  - **Animations**: Powered by GSAP and Tailwind CSS for smooth, native-like transitions.
-  - **Type Safety**: strict TypeScript configuration for robust code quality.
+## Selected work
 
-## Getting Started
+Finder currently highlights public projects that visitors can actually access:
 
-### Prerequisites
+- **MacFolio** — this interactive portfolio.
+- **Atlas** — a personalized AI news agent.
+- **CrawlMind** — AI-powered crawling and research tooling.
+- **Job Finder CLI** — multi-source job discovery and ranking CLI.
+- **Threadline** — product/landing-page work.
+- **Solverse** — Web3 product work.
+- **T3MP3ST** — authorized-security engineering framework.
 
-- Node.js 18+ or Bun (recommended)
+## Engineering
 
-### Installation
+```
+React 19
+TypeScript 5.9
+Vite 7
+Tailwind CSS 4
+Zustand + Immer
+GSAP + Draggable
+xterm.js
+WebContainer API
+```
 
-1.  **Clone the repository**
+### Performance decisions
 
-    ```bash
-    git clone https://github.com/pantha704/MacFolio.git
-    cd MacFolio
-    ```
+Heavy desktop apps are code-split and mounted only after they are launched. The WebContainer runtime is dynamically imported and booted only for Terminal, rather than on every page visit. Small one-purpose dependencies were removed in favor of native browser APIs and existing primitives.
 
-2.  **Install dependencies**
+### Security and privacy
 
-    ```bash
-    bun install
-    # or
-    npm install
-    ```
+- No server secret is required by the frontend.
+- Visitor-added gallery images stay in that visitor's browser storage; they are not uploaded to a shared cloud account.
+- Vercel sends COOP/COEP headers required by WebContainer plus baseline browser-hardening headers.
+- External links use isolated new-tab behavior where applicable.
 
-3.  **Start development server**
+### Accessibility
 
-    ```bash
-    bun run dev
-    ```
+- Semantic window-control buttons with labels.
+- Visible keyboard focus states.
+- Spotlight is fully keyboard navigable.
+- Reduced-motion preferences are respected.
+- Decorative imagery is hidden from assistive technology where appropriate.
 
-4.  **Build for production**
+## Local development
 
-    ```bash
-    bun run build
-    ```
+### Requirements
+
+- Node.js **22.12+**
+- npm 10+ (or a current Bun release)
+
+```bash
+git clone https://github.com/pantha704/MacFolio.git
+cd MacFolio
+npm ci
+npm run dev
+```
+
+Validate a production build:
+
+```bash
+npm run check
+```
+
+## Deployment
+
+The current deployment targets Vercel. `vercel.json` includes the cross-origin isolation headers required for the browser terminal.
+
+```bash
+npm run build
+```
+
+The generated static app is emitted to `dist/`.
 
 ## Customization
 
-MacFolio is designed to be easily customizable.
+Most portfolio content lives in `src/constants/index.ts`.
 
-- **Personal Data**: Edit `src/constants/index.ts` to update your projects, social links, and bio.
-- **Images**: Add your assets to `public/images` and reference them in the configuration.
-- **Styles**: Global styles are defined in `src/index.css`, using Tailwind CSS for component styling.
+- Projects: `WORK_LOCATION`
+- About copy: `ABOUT_LOCATION`
+- Resume: `public/files/resume.pdf`
+- Social links: `socials`
+- Default gallery: `src/constants/initialImages.json`
+- Global desktop styling: `src/index.css`
+
+SEO/social metadata lives in `index.html`, with crawler files in `public/`.
+
+## Quality gate
+
+Every push and pull request runs:
+
+1. ESLint
+2. TypeScript project build
+3. Vite production build
+
+See `.github/workflows/ci.yml`.
