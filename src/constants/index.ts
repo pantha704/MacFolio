@@ -17,58 +17,45 @@ const navLinks = [
 ];
 
 const navIcons = [
-  {
-    id: 1,
-    img: "/icons/wifi.svg",
-  },
-  // {
-  //   id: 2,
-  //   img: "/icons/search.svg",
-  // },
-  // {
-  //   id: 3,
-  //   img: "/icons/user.svg",
-  // },
-  // {
-  //   id: 4,
-  //   img: "/icons/mode.svg",
-  // },
+  { id: 1, img: "/icons/wifi.svg" },
+  { id: 2, img: "/icons/search.svg" },
+  { id: 3, img: "/icons/user.svg" },
 ];
 
 const dockApps = [
   {
     id: "finder",
-    name: "Finder", // was "Finder"
+    name: "Finder",
     icon: "finder.png",
     canOpen: true,
   },
   {
     id: "safari",
-    name: "Safari", // was "Safari"
+    name: "Safari",
     icon: "safari.png",
     canOpen: true,
   },
   {
     id: "photos",
-    name: "Gallery", // was "Photos"
+    name: "Photos",
     icon: "photos.png",
     canOpen: true,
   },
   {
     id: "contact",
-    name: "Get in touch", // or "Get in touch"
+    name: "Contact",
     icon: "contact.png",
     canOpen: true,
   },
   {
     id: "terminal",
-    name: "Terminal", // was "Terminal"
+    name: "Terminal",
     icon: "terminal.png",
     canOpen: true,
   },
   {
     id: "trash",
-    name: "Archive", // was "Trash"
+    name: "Archive",
     icon: "trash.png",
     canOpen: true,
   },
@@ -280,13 +267,13 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "txt",
       position: "top-60 left-5",
-      subtitle: "Full Stack Developer & Blockchain Engineer",
+      subtitle: "Full-Stack · Web3 · AI / Automation",
       image: "/images/adrian.jpg",
       description: [
-        "Hey! I’m Pratham 👋, a Full Stack Developer and Blockchain Enthusiast.",
-        "I specialize in building high-performance web applications and decentralized solutions on Solana.",
-        "My stack includes React, Next.js, TypeScript, Rust, and Anchor. I love turning complex ideas into elegant, user-friendly code.",
-        "When I'm not coding, I'm exploring the latest in Web3, contributing to open source, or optimizing my terminal config.",
+        "Hey! I’m Pratham 👋. I build full-stack products, developer tooling, AI/automation systems, and Solana programs.",
+        "Recent work spans personalized AI products, web crawling and research infrastructure, CLI automation, interactive frontend systems, and Web3.",
+        "I care about architecture, reliability, clear interfaces, and turning ambitious ideas into software that actually ships.",
+        "Open Finder → Work for selected projects, or use Spotlight to jump directly to anything in this portfolio.",
       ],
     },
   ],
