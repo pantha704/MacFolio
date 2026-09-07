@@ -11,7 +11,7 @@ const Dock = () => {
 
   useGSAP(() => {
     const dock = dockRef.current
-    if (!dock) return () => {}
+    if (!dock || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}
 
     const icons = dock.querySelectorAll(".dock-icon")
 
@@ -114,7 +114,7 @@ const Dock = () => {
               disabled={!canOpen}
               onClick={() => toggleApp({id, canOpen})}
             >
-              <img src={'/images/' + icon} alt={name} loading='lazy' className={canOpen ? "" : "opacity-50"}/>
+              <img src={'/images/' + icon} alt={name} className={canOpen ? "" : "opacity-50"}/>
             </button>
             <div className={`size-1 rounded-full bg-white/50 ${windows[id as keyof typeof windows]?.isOpen ? 'opacity-100' : 'opacity-0'}`} />
           </div>
