@@ -1,103 +1,121 @@
-import dayjs from "dayjs"
-import { navIcons } from "#constants"
-import { useEffect, useState, useRef } from "react"
-import WifiMenu from "./menus/WifiMenu"
-import UserMenu from "./menus/UserMenu"
-import Spotlight from "./menus/Spotlight"
+import dayjs from 'dayjs'
+import { navIcons } from '#constants'
+import { useEffect, useRef, useState } from 'react'
+import { useWindowStore } from '#store/useWindowStore'
+import WifiMenu from './menus/WifiMenu'
+import UserMenu from './menus/UserMenu'
+import Spotlight from './menus/Spotlight'
 
 const Navbar = () => {
-    const [time, setTime] = useState(dayjs())
-    const [activeMenu, setActiveMenu] = useState<string | null>(null)
-    const menuRef = useRef<HTMLDivElement>(null)
+  const [time, setTime] = useState(dayjs())
+  const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const openWindow = useWindowStore((state) => state.openWindow)
 
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setTime(dayjs())
-      }, 1000 * 20)
+  useEffect(() => {
+    const interval = window.setInterval(() => setTime(dayjs()), 20_000)
+    return () => window.clearInterval(interval)
+  }, [])
 
-      return () => clearInterval(interval)
-    }, [])
-
-    // Handle click outside to close menus
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                // Don't close if clicking the toggle buttons themselves (handled by stopPropagation in button or logic here)
-                // Actually, simpler: if we click outside the menu container, close it.
-                // But the buttons are outside the menu container.
-                // Let's rely on the fact that clicking a button toggles it.
-                // We need to be careful not to close immediately when opening.
-                setActiveMenu(null)
-            }
-        }
-
-        if (activeMenu && activeMenu !== 'search') { // Search has its own overlay
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [activeMenu])
-
-    const toggleMenu = (e: React.MouseEvent, menu: string) => {
-        e.stopPropagation() // Prevent click from bubbling to document
-        setActiveMenu(prev => prev === menu ? null : menu)
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setActiveMenu((menu) => menu === 'search' ? null : 'search')
+      } else if (event.key === 'Escape') {
+        setActiveMenu(null)
+      }
     }
 
-    return (
-        <nav className="relative z-[9999]">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-                <img src="/images/logo.svg" alt="logo" className="pb-1 w-5 h-5"/>
-                <p className="text-sm font-bold tracking-wide hidden sm:block">MacFolio</p>
-            </div>
-          </div>
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <ul className="flex items-center gap-2 sm:gap-4">
-              {navIcons.map(({id, img}) => (
-                <li key={id} className="relative">
-                  <button
-                    onClick={(e) => {
-                        if (id === 1) toggleMenu(e, 'wifi')
-                        if (id === 2) toggleMenu(e, 'search')
-                        if (id === 3) toggleMenu(e, 'user')
-                    }}
-                    className={`p-1 rounded-md transition-colors ${
-                        (activeMenu === 'wifi' && id === 1) ||
-                        (activeMenu === 'user' && id === 3)
-                        ? 'bg-white/20' : 'hover:bg-white/10'
-                    }`}
-                  >
-                    <img src={img} alt="nav-icon" className="w-4 h-4" />
-                  </button>
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActiveMenu(null)
+      }
+    }
 
-                  {/* Render Menus anchored to their buttons */}
-                  {activeMenu === 'wifi' && id === 1 && (
-                      <div ref={menuRef} onClick={e => e.stopPropagation()}>
-                          <WifiMenu />
-                      </div>
-                  )}
-                  {activeMenu === 'user' && id === 3 && (
-                      <div ref={menuRef} onClick={e => e.stopPropagation()}>
-                          <UserMenu />
-                      </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+    if (activeMenu && activeMenu !== 'search') {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
 
-            <time dateTime="2025" className="text-sm font-medium min-w-[80px] sm:min-w-[140px] text-right">
-                {time.format("ddd MMM D h:mm A")}
-            </time>
-          </div>
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [activeMenu])
 
-          {/* Spotlight is global overlay */}
-          {activeMenu === 'search' && (
-              <Spotlight onClose={() => setActiveMenu(null)} />
-          )}
-        </nav>
-    )
+  const toggleMenu = (event: React.MouseEvent, menu: string) => {
+    event.stopPropagation()
+    setActiveMenu((current) => current === menu ? null : menu)
+  }
+
+  const labels: Record<number, string> = {
+    1: 'Wi-Fi',
+    2: 'Spotlight Search',
+    3: 'User menu',
+  }
+
+  return (
+    <nav className="relative z-[9999]" aria-label="macOS menu bar">
+      <button
+        type="button"
+        className="flex items-center gap-2 rounded-md px-1.5 py-0.5 hover:bg-white/10"
+        onClick={() => openWindow('finder', { activeSide: 'about' })}
+        aria-label="Open About Pratham"
+      >
+        <img src="/images/logo.svg" alt="" className="pb-1 w-5 h-5" />
+        <span className="text-sm font-bold tracking-wide hidden sm:block">MacFolio</span>
+      </button>
+
+      <div className="flex items-center gap-2 sm:gap-4">
+        <ul className="flex items-center gap-1 sm:gap-2">
+          {navIcons.map(({ id, img }) => (
+            <li key={id} className="relative">
+              <button
+                type="button"
+                onClick={(event) => {
+                  if (id === 1) toggleMenu(event, 'wifi')
+                  if (id === 2) toggleMenu(event, 'search')
+                  if (id === 3) toggleMenu(event, 'user')
+                }}
+                className={`p-1.5 rounded-md transition-colors ${(
+                  (activeMenu === 'wifi' && id === 1) ||
+                  (activeMenu === 'user' && id === 3)
+                ) ? 'bg-white/15' : 'hover:bg-white/10'}`}
+                aria-label={labels[id] ?? 'Menu item'}
+                title={id === 2 ? 'Spotlight (⌘/Ctrl K)' : labels[id]}
+              >
+                <img src={img} alt="" className="w-4 h-4 brightness-0 invert" />
+              </button>
+
+              {activeMenu === 'wifi' && id === 1 && (
+                <div ref={menuRef} onClick={(event) => event.stopPropagation()}>
+                  <WifiMenu />
+                </div>
+              )}
+              {activeMenu === 'user' && id === 3 && (
+                <div ref={menuRef} onClick={(event) => event.stopPropagation()}>
+                  <UserMenu />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <time
+          dateTime={time.toISOString()}
+          className="text-xs sm:text-sm font-medium min-w-[66px] sm:min-w-[140px] text-right"
+          title={time.format('dddd, MMMM D, YYYY h:mm A')}
+        >
+          <span className="hidden sm:inline">{time.format('ddd MMM D h:mm A')}</span>
+          <span className="sm:hidden">{time.format('h:mm A')}</span>
+        </time>
+      </div>
+
+      {activeMenu === 'search' && <Spotlight onClose={() => setActiveMenu(null)} />}
+    </nav>
+  )
 }
 
 export default Navbar
