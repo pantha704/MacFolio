@@ -1,155 +1,159 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
 import { locations } from '#constants'
+import { useWindowStore } from '#store/useWindowStore'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { PreviewData } from './Preview'
 
-interface FinderItem {
-    id: number | string;
-    name: string;
-    icon: string;
-    kind?: string;
-    type?: string;
-    children?: FinderItem[];
-    repoUrl?: string;
-    fileType?: string;
-    href?: string;
-    [key: string]: any;
+interface FinderItem extends PreviewData {
+  id: number | string
+  icon: string
+  kind?: string
+  type?: string
+  children?: FinderItem[]
+  repoUrl?: string
 }
 
-const Finder = ({ windowData }: { windowData?: { activeSide?: keyof typeof locations } }) => {
+interface FinderWindowData {
+  activeSide?: keyof typeof locations
+}
+
+const Finder = ({ windowData }: { windowData?: FinderWindowData }) => {
   const [currentFolder, setCurrentFolder] = useState<FinderItem>(locations.work as FinderItem)
   const [history, setHistory] = useState<FinderItem[]>([locations.work as FinderItem])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [activeSide, setActiveSide] = useState<keyof typeof locations>('work')
+  const [selectedId, setSelectedId] = useState<FinderItem['id'] | null>(null)
+  const openWindow = useWindowStore((state) => state.openWindow)
 
   useEffect(() => {
-    if (windowData?.activeSide) {
-        const folder = locations[windowData.activeSide] as FinderItem
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        setCurrentFolder(folder)
-        setHistory([folder])
-        setCurrentIndex(0)
-        setActiveSide(windowData.activeSide)
-    }
+    if (!windowData?.activeSide) return
+
+    const folder = locations[windowData.activeSide] as FinderItem
+    setCurrentFolder(folder)
+    setHistory([folder])
+    setCurrentIndex(0)
+    setActiveSide(windowData.activeSide)
+    setSelectedId(null)
   }, [windowData])
 
   const navigateTo = (folder: FinderItem) => {
-    const newHistory = history.slice(0, currentIndex + 1)
-    newHistory.push(folder)
-    setHistory(newHistory)
-    setCurrentIndex(newHistory.length - 1)
+    const nextHistory = history.slice(0, currentIndex + 1)
+    nextHistory.push(folder)
+    setHistory(nextHistory)
+    setCurrentIndex(nextHistory.length - 1)
     setCurrentFolder(folder)
+    setSelectedId(null)
   }
 
   const handleSideClick = (side: keyof typeof locations) => {
     const folder = locations[side] as FinderItem
     setActiveSide(side)
-    // Reset history when switching sidebar items
     setHistory([folder])
     setCurrentIndex(0)
     setCurrentFolder(folder)
+    setSelectedId(null)
   }
 
   const goBack = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1
-      setCurrentIndex(newIndex)
-      setCurrentFolder(history[newIndex])
-    }
+    if (currentIndex <= 0) return
+    const nextIndex = currentIndex - 1
+    setCurrentIndex(nextIndex)
+    setCurrentFolder(history[nextIndex])
+    setSelectedId(null)
   }
 
   const goForward = () => {
-    if (currentIndex < history.length - 1) {
-      const newIndex = currentIndex + 1
-      setCurrentIndex(newIndex)
-      setCurrentFolder(history[newIndex])
-    }
+    if (currentIndex >= history.length - 1) return
+    const nextIndex = currentIndex + 1
+    setCurrentIndex(nextIndex)
+    setCurrentFolder(history[nextIndex])
+    setSelectedId(null)
   }
 
-  const handleItemClick = (child: FinderItem) => {
-    if (child.kind === 'folder') {
-        navigateTo(child)
-    } else if (child.fileType === 'url' && child.href) {
-        window.open(child.href, '_blank')
-    } else if (child.repoUrl) {
-         // Fallback for old structure if any
-        const github1sUrl = child.repoUrl.replace('github.com', 'github1s.com')
-        window.open(github1sUrl, '_blank')
+  const openItem = (item: FinderItem) => {
+    if (item.kind === 'folder') {
+      navigateTo(item)
+      return
+    }
+
+    if (item.fileType === 'url' && item.href) {
+      window.open(item.href, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (['pdf', 'img', 'txt'].includes(item.fileType ?? '')) {
+      openWindow('preview', item)
+      return
+    }
+
+    if (item.repoUrl) {
+      window.open(item.repoUrl.replace('github.com', 'github1s.com'), '_blank', 'noopener,noreferrer')
     }
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#1e1e1e] rounded-xl overflow-hidden font-georama border border-gray-800 shadow-2xl text-gray-200">
-      {/* Header */}
-      <div className="window-header flex items-center gap-4 px-4 py-3 bg-[#2a2a2a] border-b border-gray-800">
+    <div className="w-full h-full flex flex-col bg-[#1e1e1e] rounded-xl overflow-hidden font-georama border border-white/10 shadow-2xl text-gray-200">
+      <div className="window-header flex items-center gap-4 px-4 py-3 bg-[#292929]/90 backdrop-blur-xl border-b border-white/10">
         <WindowControls target="finder" />
 
-        <div className="flex items-center gap-2 ml-4 text-gray-400">
-          <ChevronLeft
-            className={`icon w-5 h-5 transition-colors ${currentIndex > 0 ? 'cursor-pointer hover:text-white text-gray-400' : 'text-gray-600 cursor-default'}`}
-            onClick={goBack}
-          />
-          <ChevronRight
-            className={`icon w-5 h-5 transition-colors ${currentIndex < history.length - 1 ? 'cursor-pointer hover:text-white text-gray-400' : 'text-gray-600 cursor-default'}`}
-            onClick={goForward}
-          />
+        <div className="flex items-center gap-1 ml-2 text-gray-400">
+          <button type="button" aria-label="Back" disabled={currentIndex <= 0} className="icon disabled:opacity-30" onClick={goBack}>
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button type="button" aria-label="Forward" disabled={currentIndex >= history.length - 1} className="icon disabled:opacity-30" onClick={goForward}>
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
 
-        <span className="font-semibold text-gray-200 ml-2">
-            {currentFolder.name}
-        </span>
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-3 text-gray-400">
-        </div>
+        <span className="font-semibold text-gray-200 ml-1 truncate">{currentFolder.name}</span>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-48 bg-[#252525]/80 backdrop-blur-xl border-r border-gray-800 p-2 overflow-y-auto text-sm select-none [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#484f58] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#5a626e] [scrollbar-width:thin] [scrollbar-color:#484f58_transparent]">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <aside className="w-40 sm:w-48 flex-none bg-white/[0.045] backdrop-blur-2xl border-r border-white/10 p-2 overflow-y-auto text-sm select-none">
+          <p className="text-[10px] font-semibold text-gray-500 px-2 mb-1 mt-1">Favorites</p>
+          <ul>
+            {Object.entries(locations).map(([key, location]) => (
+              <li key={key}>
+                <button
+                  type="button"
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition-colors ${activeSide === key ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5'}`}
+                  onClick={() => handleSideClick(key as keyof typeof locations)}
+                >
+                  <img src={location.icon} alt="" className="w-4 h-4" />
+                  <span className="truncate">{location.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
 
-            <div className="mb-4">
-                <p className="text-[10px] font-semibold text-gray-500 px-2 mb-1">Favorites</p>
-                <ul>
-                    {Object.entries(locations).map(([key, loc]) => (
-                        <li
-                            key={key}
-                            className={`flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-colors ${activeSide === key ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5'}`}
-                            onClick={() => handleSideClick(key as keyof typeof locations)}
-                        >
-                            <img src={loc.icon} alt={loc.name} className="w-4 h-4" />
-                            <span>{loc.name}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 bg-[#1e1e1e] p-4 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#484f58] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#5a626e] [scrollbar-width:thin] [scrollbar-color:#484f58_transparent]">
-            <div className="grid grid-cols-4 gap-4">
-                {currentFolder.children?.map((child: FinderItem) => (
-                    <div
-                        key={child.id}
-                        className="flex flex-col items-center gap-1 group cursor-pointer p-2 rounded-md hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
-                        onClick={() => handleItemClick(child)}
-                        onDoubleClick={() => handleItemClick(child)}
-                    >
-                        <img src={child.icon} alt={child.name} className="w-12 h-12 object-contain drop-shadow-sm opacity-90 group-hover:opacity-100 transition-opacity" />
-                        <span className="text-xs text-center text-gray-300 font-medium px-1 rounded group-hover:text-white line-clamp-2 w-full break-words">
-                            {child.name}
-                        </span>
-                    </div>
-                ))}
-            </div>
+        <div className="flex-1 bg-[#1e1e1e] p-4 overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {currentFolder.children?.map((child) => (
+              <button
+                type="button"
+                key={child.id}
+                className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 ${selectedId === child.id ? 'bg-blue-500/20 border-blue-400/30' : 'border-transparent hover:bg-white/5 hover:border-white/5'}`}
+                onClick={() => setSelectedId(child.id)}
+                onDoubleClick={() => openItem(child)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') openItem(child)
+                }}
+                aria-label={`${child.name}. Press Enter or double click to open.`}
+              >
+                <img src={child.icon} alt="" className="w-12 h-12 object-contain drop-shadow-sm" />
+                <span className="text-xs text-center text-gray-300 font-medium break-words line-clamp-2 w-full">
+                  {child.name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-const FinderWindow = WindowWrapper(Finder, 'finder')
-
-export default FinderWindow
+export default WindowWrapper(Finder, 'finder')
