@@ -1,25 +1,66 @@
-import { useEffect, useRef, useState } from 'react';
-import { Terminal } from 'xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { useWebContainer } from '#context/WebContainerContext';
-import { getStackFetchOutput } from '#utils/stackfetch';
-import 'xterm/css/xterm.css';
+import { useEffect, useRef, useState } from 'react'
+import type { WebContainer, WebContainerProcess } from '@webcontainer/api'
+import { Terminal } from 'xterm'
+import { FitAddon } from '@xterm/addon-fit'
+import { getStackFetchOutput } from '#utils/stackfetch'
+import { useWindowStore } from '#store/useWindowStore'
+import 'xterm/css/xterm.css'
 
-import { useWindowStore } from '#store/useWindowStore';
+let webContainerPromise: Promise<WebContainer> | null = null
+
+const getWebContainer = () => {
+  if (!webContainerPromise) {
+    webContainerPromise = import('@webcontainer/api')
+      .then(({ WebContainer }) => WebContainer.boot())
+      .catch((error) => {
+        webContainerPromise = null
+        throw error
+      })
+  }
+
+  return webContainerPromise
+}
 
 const TerminalBox = () => {
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const xtermRef = useRef<Terminal | null>(null);
-  const { instance: webContainer, isLoading, error } = useWebContainer();
-  const shellProcessRef = useRef<any>(null);
-  const initializedRef = useRef(false); // Tracks if stackfetch has been written
-  const [isReady, setIsReady] = useState(false);
-  const closeWindow = useWindowStore(state => state.closeWindow);
+  const terminalRef = useRef<HTMLDivElement>(null)
+  const xtermRef = useRef<Terminal | null>(null)
+  const shellProcessRef = useRef<WebContainerProcess | null>(null)
+  const initializedRef = useRef(false)
+  const [webContainer, setWebContainer] = useState<WebContainer | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const closeWindow = useWindowStore((state) => state.closeWindow)
 
   useEffect(() => {
-    if (!terminalRef.current) return;
+    if (!window.crossOriginIsolated) {
+      setError(new Error('SharedArrayBuffer is unavailable. COOP/COEP headers are required for the terminal.'))
+      setIsLoading(false)
+      return
+    }
 
-    // Initialize xterm
+    let active = true
+
+    getWebContainer()
+      .then((instance) => {
+        if (active) setWebContainer(instance)
+      })
+      .catch((cause) => {
+        if (active) {
+          setError(cause instanceof Error ? cause : new Error('Failed to boot the terminal environment.'))
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!terminalRef.current) return
+
     const term = new Terminal({
       cursorBlink: true,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
@@ -29,142 +70,117 @@ const TerminalBox = () => {
         foreground: '#ffffff',
       },
       convertEol: true,
-    });
+    })
 
-    const fitAddon = new FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(terminalRef.current);
-    // Helper to safely fit the terminal
+    const fitAddon = new FitAddon()
+    term.loadAddon(fitAddon)
+    term.open(terminalRef.current)
+    xtermRef.current = term
+
     const safeFit = () => {
-      if (terminalRef.current && terminalRef.current.clientWidth > 0) {
-        try {
-          fitAddon.fit();
-          if (shellProcessRef.current && xtermRef.current) {
-            const { cols, rows } = xtermRef.current;
-            shellProcessRef.current.resize({ cols, rows });
-          }
-          // Force a refresh/write if it hasn't been written yet
-          if (!initializedRef.current) {
-             initializedRef.current = true;
-             term.clear();
-             term.write(getStackFetchOutput());
-          }
-        } catch (e) {
-          console.warn('Fit error:', e);
+      if (!terminalRef.current || terminalRef.current.clientWidth === 0) return
+
+      try {
+        fitAddon.fit()
+        shellProcessRef.current?.resize({ cols: term.cols, rows: term.rows })
+
+        if (!initializedRef.current) {
+          initializedRef.current = true
+          term.clear()
+          term.write(getStackFetchOutput())
         }
+      } catch {
+        // The terminal can briefly have zero geometry while its window animates.
       }
-    };
-
-    // Fit after a small delay to ensure container has size
-    // Use requestAnimationFrame to wait for layout
-    requestAnimationFrame(() => {
-       setTimeout(safeFit, 100);
-    });
-
-    xtermRef.current = term;
-
-    // Handle resizing robustly with ResizeObserver
-    const resizeObserver = new ResizeObserver(() => {
-      safeFit();
-    });
-
-    if (terminalRef.current) {
-      resizeObserver.observe(terminalRef.current);
     }
 
+    const resizeObserver = new ResizeObserver(safeFit)
+    resizeObserver.observe(terminalRef.current)
+    requestAnimationFrame(safeFit)
+
     return () => {
-      resizeObserver.disconnect();
-      term.dispose();
-    };
-  }, []);
+      resizeObserver.disconnect()
+      xtermRef.current = null
+      term.dispose()
+    }
+  }, [])
 
   useEffect(() => {
-    const term = xtermRef.current;
-    if (!term || !webContainer || shellProcessRef.current) return;
+    const term = xtermRef.current
+    if (!term || !webContainer || shellProcessRef.current) return
+
+    let disposed = false
+    let input: WritableStreamDefaultWriter<string> | null = null
+    let dataSubscription: { dispose: () => void } | null = null
+    let resizeSubscription: { dispose: () => void } | null = null
 
     const startShell = async () => {
       try {
         const shellProcess = await webContainer.spawn('bash', {
-          terminal: {
-            cols: term.cols,
-            rows: term.rows,
-          },
-        });
+          terminal: { cols: term.cols, rows: term.rows },
+        })
 
-        shellProcessRef.current = shellProcess;
-        setIsReady(true);
+        if (disposed) {
+          shellProcess.kill()
+          return
+        }
 
-        // Listen for exit
+        shellProcessRef.current = shellProcess
         shellProcess.exit.then(() => {
-          closeWindow('terminal');
-        });
+          if (!disposed) closeWindow('terminal')
+        })
 
-        shellProcess.output.pipeTo(
+        void shellProcess.output.pipeTo(
           new WritableStream({
             write(data) {
-              term.write(data);
+              term.write(data)
             },
-          })
-        );
+          }),
+        )
 
-        const input = shellProcess.input.getWriter();
-
-        setTimeout(() => input.write('node -v; python --version; yarn -v; pnpm -v; npm -v\r\n'), 1000);
-
-        term.onData((data) => {
-          input.write(data);
-        });
-
-        term.onResize((size) => {
-          shellProcess.resize({
-            cols: size.cols,
-            rows: size.rows,
-          });
-        });
-
-      } catch (error) {
-        term.write('\r\n\x1b[31mFailed to start shell.\x1b[0m\r\n');
-        console.error('Shell start error:', error);
+        input = shellProcess.input.getWriter()
+        dataSubscription = term.onData((data) => {
+          void input?.write(data)
+        })
+        resizeSubscription = term.onResize(({ cols, rows }) => {
+          shellProcess.resize({ cols, rows })
+        })
+      } catch (cause) {
+        term.write('\r\n\x1b[31mFailed to start shell.\x1b[0m\r\n')
+        setError(cause instanceof Error ? cause : new Error('Failed to start the shell.'))
       }
-    };
+    }
 
-    startShell();
+    void startShell()
 
     return () => {
-      if (shellProcessRef.current) {
-        shellProcessRef.current.kill();
-      }
-    };
-  }, [webContainer]);
-
-  if (!window.crossOriginIsolated) {
-     return (
-       <div className="h-full w-full bg-[#1e1e1e] text-red-500 p-4 font-mono">
-         Error: SharedArrayBuffer is not available.
-         <br />
-         Please ensure COOP/COEP headers are set.
-       </div>
-     );
-  }
+      disposed = true
+      dataSubscription?.dispose()
+      resizeSubscription?.dispose()
+      shellProcessRef.current?.kill()
+      shellProcessRef.current = null
+      void input?.close()
+    }
+  }, [webContainer, closeWindow])
 
   if (error) {
     return (
-      <div className="h-full w-full bg-[#1e1e1e] text-red-500 p-4 font-mono">
-        Error booting WebContainer: {error.message}
+      <div className="h-full w-full bg-[#1e1e1e] text-red-400 p-4 font-mono text-sm">
+        Terminal unavailable: {error.message}
       </div>
-    );
+    )
   }
 
   return (
     <div className="relative h-full w-full bg-[#1e1e1e]">
       <div ref={terminalRef} className="h-full w-full" />
-      {isLoading && !isReady && (
-        <div className="absolute top-2 right-2 text-green-500 font-mono text-xs">
-          Initializing...
+      {isLoading && (
+        <div className="absolute top-2 right-2 text-green-500 font-mono text-xs" role="status">
+          Initializing terminal…
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default TerminalBox;
+export default TerminalBox
