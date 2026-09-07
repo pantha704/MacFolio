@@ -7,8 +7,8 @@ import { ChevronLeft, ChevronRight, Image as ImageIcon, Heart, Map, Users, Clock
 import initialImages from '#constants/initialImages.json'
 import { useSystemStore } from '#store/systemStore'
 
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+const MAX_LOCAL_UPLOAD_BYTES = 900 * 1024
+const MAX_LOCAL_UPLOADS = 2
 
 const Gallery = () => {
   const [activeCategory, setActiveCategory] = useState(1)
@@ -110,26 +110,33 @@ const Gallery = () => {
     )
   }
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
 
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', UPLOAD_PRESET)
-
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: formData
-      })
-      const data = await res.json()
-      if (data.secure_url) {
-        addGalleryImage(data.secure_url)
-      }
-    } catch (err) {
-      console.error('Upload failed:', err)
+    if (!file.type.startsWith('image/')) {
+      window.alert('Please choose an image file.')
+      return
     }
+
+    if (file.size > MAX_LOCAL_UPLOAD_BYTES) {
+      window.alert('For privacy and performance, local photos are limited to 900 KB each.')
+      return
+    }
+
+    const localUploads = galleryImages.filter((src) => src.startsWith('data:')).length
+    if (localUploads >= MAX_LOCAL_UPLOADS) {
+      window.alert('You can add up to two local photos in this demo. Remove one before adding another.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') addGalleryImage(reader.result)
+    }
+    reader.onerror = () => window.alert('That photo could not be read.')
+    reader.readAsDataURL(file)
   }
 
   const handleReset = () => {
@@ -286,7 +293,7 @@ const Gallery = () => {
             />
             <button
                 className="p-1.5 hover:bg-white/10 rounded-md transition-colors"
-                title="Upload Photo"
+                title="Add Local Photo"
                 onClick={() => fileInputRef.current?.click()}
             >
                 <Upload className="w-4 h-4" />
