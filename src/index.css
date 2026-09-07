@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Georama:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap");
-
 @import "tailwindcss";
 
 html,
@@ -14,8 +12,8 @@ body {
 }
 
 @theme {
-  --font-georama: "Georama", sans-serif;
-  --font-roboto: "Roboto Mono", monospace;
+  --font-georama: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --font-roboto: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --breakpoint-3xl: 1920px;
 }
 
@@ -37,7 +35,7 @@ body {
   }
 
   nav {
-    @apply flex justify-between items-center bg-white/50 backdrop-blur-3xl p-2 px-5 select-none;
+    @apply flex justify-between items-center text-white bg-black/10 backdrop-blur-3xl border-b border-white/10 p-2 px-3 sm:px-5 select-none shadow-sm;
 
     div {
       @apply flex items-center max-sm:w-full max-sm:justify-center gap-5;
@@ -54,7 +52,7 @@ body {
     }
 
     time {
-      @apply text-sm font-medium text-black;
+      @apply text-sm font-medium text-white/90;
     }
   }
 }
@@ -72,7 +70,9 @@ body {
     @apply absolute bottom-5 left-1/2 -translate-x-1/2 z-50 select-none;
 
     .dock-container {
-      @apply bg-white/20 backdrop-blur-md justify-between rounded-2xl p-1.5 flex items-end gap-1.5;
+      @apply bg-white/10 backdrop-blur-3xl border border-white/15 shadow-2xl justify-between rounded-2xl p-1.5 flex items-end gap-1.5;
+      background-image: linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.045));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 18px 55px rgba(0,0,0,.28);
     }
 
     .tooltip {
@@ -105,7 +105,7 @@ body {
   }
 
   .window-header {
-    @apply flex items-center justify-between px-4 py-3 rounded-t-lg bg-gray-50 border-b border-gray-200 select-none text-sm text-gray-400 max-sm:py-4;
+    @apply flex items-center justify-between px-4 py-3 rounded-t-lg bg-white/8 backdrop-blur-3xl border-b border-white/10 select-none text-sm text-gray-400 max-sm:py-4;
   }
 
   /* Prevent iframe interaction during drag/resize to fix sticking */
@@ -417,5 +417,95 @@ body {
         }
       }
     }
+  }
+}
+
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: #050505;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(96, 165, 250, .95);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .window {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.08),
+      0 26px 90px rgba(0,0,0,.38),
+      0 3px 12px rgba(0,0,0,.32);
+  }
+
+  #preview {
+    width: min(720px, 78vw);
+    height: min(640px, calc(100vh - 110px));
+    top: 78px;
+    left: 18vw;
+  }
+
+  @media (min-width: 768px) {
+    #safari {
+      width: min(1024px, 84vw);
+      height: min(680px, calc(100vh - 120px));
+      top: 72px;
+      left: 8vw;
+    }
+
+    #terminal {
+      width: min(900px, 80vw);
+      height: min(580px, calc(100vh - 120px));
+      top: 86px;
+      left: 9vw;
+    }
+
+    #finder {
+      width: min(760px, 72vw);
+      height: min(520px, calc(100vh - 120px));
+      top: 70px;
+      left: 8vw;
+    }
+
+    #photos {
+      width: min(920px, 82vw);
+      height: min(640px, calc(100vh - 110px));
+      top: 62px;
+      left: 10vw;
+    }
+
+    #contact {
+      width: min(640px, 68vw);
+      height: min(520px, calc(100vh - 130px));
+      top: 92px;
+      left: 23vw;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
