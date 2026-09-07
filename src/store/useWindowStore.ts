@@ -10,20 +10,20 @@ interface WindowItem {
   isMinimized: boolean;
   isMaximized: boolean;
   zIndex: number;
-  data: any;
+  data: unknown;
 }
 
 interface WindowState {
   windows: Record<WindowKey, WindowItem>;
   nextZIndex: number;
-  openWindow: (windowKey: WindowKey, data?: any) => void;
+  openWindow: (windowKey: WindowKey, data?: unknown) => void;
   closeWindow: (windowKey: WindowKey) => void;
   minimizeWindow: (windowKey: WindowKey) => void;
   maximizeWindow: (windowKey: WindowKey) => void;
   restoreWindow: (windowKey: WindowKey) => void;
   focusWindow: (windowKey: WindowKey) => void;
   toggleWindow: (windowKey: WindowKey) => void;
-  updateWindowData: (windowKey: WindowKey, data: any) => void;
+  updateWindowData: (windowKey: WindowKey, data: unknown) => void;
   updateWindowZIndex: (windowKey: WindowKey) => void;
 }
 
@@ -42,7 +42,7 @@ export const useWindowStore = create<WindowState>()(
     }, {} as Record<WindowKey, WindowItem>),
     nextZIndex: INITIAL_Z_INDEX + 1,
 
-    openWindow: (windowKey: WindowKey, data: any = null) =>
+    openWindow: (windowKey: WindowKey, data: unknown = null) =>
       set((state) => {
         const win = state.windows[windowKey];
         if (win) {
