@@ -2,13 +2,15 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
-import { PanelLeft, ChevronLeft, ChevronRight, Search, RotateCw } from 'lucide-react'
+import { PanelLeft, ChevronLeft, ChevronRight, Search, RotateCw, WifiOff } from 'lucide-react'
 import GitHubProfile from '#components/apps/GitHubProfile'
 import { FaGithub } from 'react-icons/fa'
+import { useSystemStore } from '#store/systemStore'
 // import { FcGoogle } from 'react-icons/fc'
 // import { SiJavascript } from 'react-icons/si'
 
 const Safari = () => {
+  const isWifiEnabled = useSystemStore((state) => state.isWifiEnabled)
   const [history, setHistory] = useState<string[]>([''])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [currentUrl, setCurrentUrl] = useState('')
@@ -35,6 +37,8 @@ const Safari = () => {
   }
 
   const processUrl = (url: string) => {
+    if (!isWifiEnabled) return
+
     let finalUrl = url
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       if (url.includes('.') && !url.includes(' ')) {
@@ -168,8 +172,20 @@ const Safari = () => {
       {/* Main Content Area */}
       <div className="flex-1 relative bg-[#1e1e1e] overflow-hidden">
 
+        {!isWifiEnabled && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center text-gray-300">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <WifiOff className="w-9 h-9 text-gray-400" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Safari is offline</h2>
+              <p className="mt-1 text-sm text-gray-500">Turn Wi-Fi back on from the menu bar. Local apps still work.</p>
+            </div>
+          </div>
+        )}
+
         {/* Start Page */}
-        {activeView === 'start' && (
+        {isWifiEnabled && activeView === 'start' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
                 {/* Background Image */}
                 <div
@@ -213,7 +229,7 @@ const Safari = () => {
         )}
 
         {/* GitHub View */}
-        {activeView === 'github' && (
+        {isWifiEnabled && activeView === 'github' && (
             <GitHubProfile key={refreshKey} />
         )}
 
