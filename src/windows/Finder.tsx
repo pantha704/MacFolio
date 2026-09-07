@@ -17,6 +17,7 @@ interface FinderItem extends PreviewData {
 
 interface FinderWindowData {
   activeSide?: keyof typeof locations
+  openFolder?: string
 }
 
 const Finder = ({ windowData }: { windowData?: FinderWindowData }) => {
@@ -31,9 +32,13 @@ const Finder = ({ windowData }: { windowData?: FinderWindowData }) => {
     if (!windowData?.activeSide) return
 
     const folder = locations[windowData.activeSide] as FinderItem
-    setCurrentFolder(folder)
-    setHistory([folder])
-    setCurrentIndex(0)
+    const targetFolder = windowData.openFolder
+      ? folder.children?.find((item) => item.kind === 'folder' && item.name === windowData.openFolder)
+      : undefined
+
+    setCurrentFolder(targetFolder ?? folder)
+    setHistory(targetFolder ? [folder, targetFolder] : [folder])
+    setCurrentIndex(targetFolder ? 1 : 0)
     setActiveSide(windowData.activeSide)
     setSelectedId(null)
   }, [windowData])
