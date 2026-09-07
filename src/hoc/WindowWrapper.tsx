@@ -47,7 +47,6 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
         gsap.to(element, {
           scale: isMobile ? 0.96 : 0.88,
           opacity: 0,
-          y: isMobile ? 0 : 30,
           duration: 0.22,
           ease: 'power2.in',
           onComplete: () => {
@@ -128,8 +127,8 @@ const WindowWrapper = (Component: React.ComponentType<Record<string, unknown>>, 
 
       gsap.fromTo(
         element,
-        { scale: 0.94, opacity: 0, y: '+=18' },
-        { scale: 1, opacity: 1, y: '-=18', duration: 0.24, ease: 'power2.out' },
+        { scale: 0.94, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.24, ease: 'power2.out' },
       )
     }, [isOpen, isMinimized, isMaximized, isRendered, isMobile])
 
