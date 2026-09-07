@@ -32,6 +32,7 @@ const GitHubProfile = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([])
   const [starred, setStarred] = useState<GitHubRepo[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'repositories'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -59,30 +60,44 @@ const GitHubProfile = () => {
   }
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    const fetchJson = async <T,>(url: string): Promise<T> => {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { Accept: 'application/vnd.github+json' },
+      })
+
+      if (!response.ok) {
+        throw new Error(response.status === 403
+          ? 'GitHub API rate limit reached. Open the real profile instead.'
+          : `GitHub returned ${response.status}.`)
+      }
+
+      return response.json() as Promise<T>
+    }
+
     const fetchData = async () => {
       try {
-        const timestamp = Date.now()
-        const [userRes, reposRes, starredRes] = await Promise.all([
-          fetch(`https://api.github.com/users/pantha704?t=${timestamp}`),
-          fetch(`https://api.github.com/users/pantha704/repos?sort=updated&per_page=30&t=${timestamp}`),
-          fetch(`https://api.github.com/users/pantha704/starred?sort=created&per_page=10&t=${timestamp}`)
+        const [userData, reposData, starredData] = await Promise.all([
+          fetchJson<GitHubUser>('https://api.github.com/users/pantha704'),
+          fetchJson<GitHubRepo[]>('https://api.github.com/users/pantha704/repos?sort=updated&per_page=30'),
+          fetchJson<GitHubRepo[]>('https://api.github.com/users/pantha704/starred?sort=created&per_page=10'),
         ])
 
-        const userData = await userRes.json()
-        const reposData = await reposRes.json()
-        const starredData = await starredRes.json()
-
         setUser(userData)
-        setRepos(reposData)
-        setStarred(starredData)
-      } catch (error) {
-        console.error('Error fetching GitHub data:', error)
+        setRepos(Array.isArray(reposData) ? reposData : [])
+        setStarred(Array.isArray(starredData) ? starredData : [])
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === 'AbortError') return
+        setErrorMessage(cause instanceof Error ? cause.message : 'GitHub could not be loaded.')
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
-    fetchData()
+    void fetchData()
+    return () => controller.abort()
   }, [])
 
   const filteredRepos = repos.filter(repo =>
@@ -103,7 +118,21 @@ const GitHubProfile = () => {
     )
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <div className="w-full h-full bg-[#0d1117] flex flex-col items-center justify-center gap-4 px-6 text-center text-[#c9d1d9]">
+        <p className="text-sm text-[#8b949e]">{errorMessage ?? 'GitHub profile is temporarily unavailable.'}</p>
+        <a
+          href="https://github.com/pantha704"
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-md border border-[#30363d] bg-[#21262d] px-4 py-2 text-sm font-medium text-white hover:bg-[#30363d]"
+        >
+          Open github.com/pantha704
+        </a>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full h-full bg-[#0d1117] text-[#c9d1d9] overflow-y-auto font-sans [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#0d1117] [&::-webkit-scrollbar-thumb]:bg-[#30363d] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#484f58] [scrollbar-width:thin] [scrollbar-color:#30363d_#0d1117]">
