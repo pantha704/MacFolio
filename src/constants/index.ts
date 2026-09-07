@@ -406,7 +406,7 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "img",
       position: "top-10 left-5",
-      imageUrl: "/images/adrian.jpg", // Keeping existing image for now, can be updated if user uploads one
+      imageUrl: "https://avatars.githubusercontent.com/u/100998543?v=4", // Keeping existing image for now, can be updated if user uploads one
     },
     {
       id: 4,
@@ -416,7 +416,7 @@ const ABOUT_LOCATION = {
       fileType: "txt",
       position: "top-60 left-5",
       subtitle: "Full Stack Developer & Blockchain Engineer",
-      image: "/images/adrian.jpg",
+      image: "https://avatars.githubusercontent.com/u/100998543?v=4",
       description: [
         "Hey! I’m Pratham 👋, a Full Stack Developer and Blockchain Enthusiast.",
         "I specialize in building high-performance web applications and decentralized solutions on Solana.",

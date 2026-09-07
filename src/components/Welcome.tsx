@@ -1,106 +1,43 @@
-import { useRef } from 'react'
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
-
-const ANIMATION_CONFIG = {
-  subtitle: {
-    weight: { min: 100, max: 400, default: 100 },
-    scale: { min: 1, max: 1.5, default: 1 },
-  },
-  title: {
-    weight: { min: 400, max: 900, default: 400 },
-    scale: { min: 1, max: 1, default: 1 },
-  },
-}
-
-const renderText = (text: string, className: string, baseWeight = 400) => {
-  return [...text].map((char, i) => (
-    <span
-      key={i}
-      className={className}
-      style={{ fontVariationSettings: `'wght' ${baseWeight}` }}
-    >
-      {char === " " ? "\u00a0" : char}
-    </span>
-  ))
-}
-
-const setupTextHover = (container: HTMLElement | null, type: keyof typeof ANIMATION_CONFIG) => {
-  if (!container) return () => {}
-
-  const letters = container.querySelectorAll("span")
-  const { weight: weightConfig, scale: scaleConfig } = ANIMATION_CONFIG[type]
-
-  const animateLetter = (letter: Element, weight: number, scale: number, duration = 0.25) => {
-    gsap.to(letter, {
-      duration,
-      ease: "power2.out",
-      fontVariationSettings: `'wght' ${weight}`,
-      scale: scale,
-      transformOrigin: "center center",
-    })
-  }
-
-  const handleMouseMove = (e: MouseEvent) => {
-    const { clientX, clientY } = e
-    const { left, top } = container.getBoundingClientRect()
-    const mouseX = clientX - left
-    const mouseY = clientY - top
-
-    letters.forEach((letter) => {
-        const {
-          left: letterLeft,
-          width: letterWidth,
-          top: letterTop,
-          height: letterHeight,
-        } = letter.getBoundingClientRect();
-
-        const letterCenterX = letterLeft - left + letterWidth / 2;
-        const letterCenterY = letterTop - top + letterHeight / 2;
-        const distance = Math.sqrt(Math.pow(mouseX - letterCenterX, 2) + Math.pow(mouseY - letterCenterY, 2))
-
-        const intensity = Math.exp(-(distance ** 2) / 10000)
-
-        const newWeight = weightConfig.min + (weightConfig.max - weightConfig.min) * intensity
-        const newScale = scaleConfig.min + (scaleConfig.max - scaleConfig.min) * intensity
-
-        animateLetter(letter, newWeight, newScale)
-    })
-  }
-
-  const handleMouseLeave = () => {
-    letters.forEach(letter => animateLetter(letter, weightConfig.default, scaleConfig.default, 0.3))
-  }
-
-  container.addEventListener("mousemove", handleMouseMove)
-  container.addEventListener("mouseleave", handleMouseLeave)
-
-  return () => {
-    container.removeEventListener("mousemove", handleMouseMove)
-    container.removeEventListener("mouseleave", handleMouseLeave)
-  }
-}
+import { ArrowUpRight, Command, FolderOpen, Mail } from 'lucide-react'
+import { useWindowStore } from '#store/useWindowStore'
+import { profile, projects } from '../data/portfolio'
 
 const Welcome = () => {
-  const titleRef = useRef<HTMLHeadingElement>(null)
-  const subtitleRef = useRef<HTMLParagraphElement>(null)
-
-  useGSAP(() => {
-    const titleCleanup = setupTextHover(titleRef.current, "title")
-    const subtitleCleanup = setupTextHover(subtitleRef.current, "subtitle")
-
-    return () => {
-      subtitleCleanup()
-      titleCleanup()
-    }
-  }, [])
-
+  const openWindow = useWindowStore(state => state.openWindow)
   return (
-    <section id="welcome">
-      <p ref={subtitleRef} className="cursor-default w-fit mx-auto mix-blend-difference text-white/90">{renderText("Hey, I'm Pratham! Welcome to my", "text-3xl font-georama", 100)}</p>
-      <h1 ref={titleRef} className='mt-7 cursor-default w-fit mx-auto mix-blend-difference text-white/90'>{renderText("portfolio", "text-9xl italic font-georama")}</h1>
+    <section className="desktop-content" id="portfolio" tabIndex={-1} aria-label="Portfolio overview">
+      <div className="desktop-heading"><span>PERSONAL SPACE / {profile.firstName.toUpperCase()}</span><span>DESIGNED TO BE EXPLORED</span></div>
+      <div className="desktop-intro">
+        <div className="intro-copy">
+          <p className="eyebrow">Developer. Builder. Curious by default.</p>
+          <h1>Hi, I’m {profile.firstName}.<br /><em>Make yourself at home.</em></h1>
+          <p className="intro-description">I build for the web and Solana. This is my little corner of the internet—part portfolio, part playground.</p>
+          <div className="hero-actions">
+            <button className="primary-action" onClick={() => openWindow('finder', { activeSide: 'work' })}><FolderOpen size={18} /> Explore my work</button>
+            <button className="secondary-action" onClick={() => openWindow('contact')}><Mail size={18} /> Let’s talk</button>
+          </div>
+          <div className="intro-stack"><span>React</span><span>TypeScript</span><span>Rust</span><span>Solana</span></div>
+        </div>
+        <aside className="desktop-note" aria-label="About this space">
+          <div className="note-header"><span className="note-mark">⌘</span><span>A NOTE FROM ME</span></div>
+          <p>Good software should<br />feel <em>second nature.</em></p>
+          <span className="note-description">That’s what I’m working toward.<br />One project at a time.</span>
+          <button onClick={() => openWindow('finder', { activeSide: 'about' })}>A little about me <ArrowUpRight size={17} /></button>
+        </aside>
+      </div>
+      <div className="work-heading"><h2>Selected work</h2><button onClick={() => openWindow('finder', { activeSide: 'work' })}>All {projects.length} projects <ArrowUpRight size={16} /></button></div>
+      <div className="project-shortcuts">
+        {projects.slice(0, 3).map((project, index) => (
+          <button key={project.id} className="project-shortcut" onClick={() => openWindow('finder', { projectId: project.id })}>
+            <span className="project-number">0{index + 1}</span>
+            <img src="/images/folder.png" alt="" width={68} height={68} />
+            <span className="project-shortcut-copy"><strong>{project.name}</strong><span>{project.category}</span></span>
+            <ArrowUpRight size={20} className="project-arrow" />
+          </button>
+        ))}
+      </div>
+      <footer className="desktop-footer"><span>Built with curiosity. Based in {profile.location}.</span><span><Command size={14} /> K to find your way · Alt W to close a window</span></footer>
     </section>
   )
 }
-
 export default Welcome

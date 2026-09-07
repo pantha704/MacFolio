@@ -1,103 +1,43 @@
-import dayjs from "dayjs"
-import { navIcons } from "#constants"
-import { useEffect, useState, useRef } from "react"
-import WifiMenu from "./menus/WifiMenu"
-import UserMenu from "./menus/UserMenu"
-import Spotlight from "./menus/Spotlight"
+import { useEffect, useState } from 'react'
+import { Search, Wifi, WifiOff, Monitor } from 'lucide-react'
+import { useWindowStore } from '#store/useWindowStore'
+import { useSystemStore } from '#store/systemStore'
+import Spotlight from './menus/Spotlight'
 
 const Navbar = () => {
-    const [time, setTime] = useState(dayjs())
-    const [activeMenu, setActiveMenu] = useState<string | null>(null)
-    const menuRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setTime(dayjs())
-      }, 1000 * 20)
-
-      return () => clearInterval(interval)
-    }, [])
-
-    // Handle click outside to close menus
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                // Don't close if clicking the toggle buttons themselves (handled by stopPropagation in button or logic here)
-                // Actually, simpler: if we click outside the menu container, close it.
-                // But the buttons are outside the menu container.
-                // Let's rely on the fact that clicking a button toggles it.
-                // We need to be careful not to close immediately when opening.
-                setActiveMenu(null)
-            }
-        }
-
-        if (activeMenu && activeMenu !== 'search') { // Search has its own overlay
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [activeMenu])
-
-    const toggleMenu = (e: React.MouseEvent, menu: string) => {
-        e.stopPropagation() // Prevent click from bubbling to document
-        setActiveMenu(prev => prev === menu ? null : menu)
+  const [time, setTime] = useState(() => new Date())
+  const [searchOpen, setSearchOpen] = useState(false)
+  const isWifiEnabled = useSystemStore(state => state.isWifiEnabled)
+  const toggleWifi = useSystemStore(state => state.toggleWifi)
+  const openWindow = useWindowStore(state => state.openWindow)
+  useEffect(() => {
+    const timer = window.setInterval(() => setTime(new Date()), 30_000)
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSearchOpen(open => !open)
+      }
     }
-
-    return (
-        <nav className="relative z-[9999]">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-                <img src="/images/logo.svg" alt="logo" className="pb-1 w-5 h-5"/>
-                <p className="text-sm font-bold tracking-wide hidden sm:block">MacFolio</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <ul className="flex items-center gap-2 sm:gap-4">
-              {navIcons.map(({id, img}) => (
-                <li key={id} className="relative">
-                  <button
-                    onClick={(e) => {
-                        if (id === 1) toggleMenu(e, 'wifi')
-                        if (id === 2) toggleMenu(e, 'search')
-                        if (id === 3) toggleMenu(e, 'user')
-                    }}
-                    className={`p-1 rounded-md transition-colors ${
-                        (activeMenu === 'wifi' && id === 1) ||
-                        (activeMenu === 'user' && id === 3)
-                        ? 'bg-white/20' : 'hover:bg-white/10'
-                    }`}
-                  >
-                    <img src={img} alt="nav-icon" className="w-4 h-4" />
-                  </button>
-
-                  {/* Render Menus anchored to their buttons */}
-                  {activeMenu === 'wifi' && id === 1 && (
-                      <div ref={menuRef} onClick={e => e.stopPropagation()}>
-                          <WifiMenu />
-                      </div>
-                  )}
-                  {activeMenu === 'user' && id === 3 && (
-                      <div ref={menuRef} onClick={e => e.stopPropagation()}>
-                          <UserMenu />
-                      </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            <time dateTime="2025" className="text-sm font-medium min-w-[80px] sm:min-w-[140px] text-right">
-                {time.format("ddd MMM D h:mm A")}
-            </time>
-          </div>
-
-          {/* Spotlight is global overlay */}
-          {activeMenu === 'search' && (
-              <Spotlight onClose={() => setActiveMenu(null)} />
-          )}
-        </nav>
-    )
+    window.addEventListener('keydown', onKey)
+    return () => { clearInterval(timer); window.removeEventListener('keydown', onKey) }
+  }, [])
+  return (
+    <>
+      <nav className="menubar" aria-label="Desktop menu">
+        <div className="menu-left">
+          <button className="brand-button" onClick={() => document.getElementById('portfolio')?.focus()} aria-label="Go to portfolio overview"><Monitor size={18} /><strong>MacFolio</strong></button>
+          <button className="menu-link" onClick={() => openWindow('finder', { activeSide: 'work' })}>Work</button>
+          <button className="menu-link" onClick={() => openWindow('finder', { activeSide: 'about' })}>About</button>
+          <button className="menu-link" onClick={() => openWindow('resume')}>Résumé</button>
+        </div>
+        <div className="menu-right">
+          <button className="menu-search" onClick={() => setSearchOpen(true)} aria-label="Search portfolio (Control or Command K)"><Search size={16} /><span>Search</span><kbd>⌘ K</kbd></button>
+          <button className="menu-wifi" onClick={toggleWifi} aria-label={isWifiEnabled ? 'Turn simulated Wi-Fi off' : 'Turn simulated Wi-Fi on'} title="Simulated Wi-Fi: your device connection is unchanged">{isWifiEnabled ? <Wifi size={16} /> : <WifiOff size={16} />}</button>
+          <time dateTime={time.toISOString()}>{time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}<span> {time.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span></time>
+        </div>
+      </nav>
+      {searchOpen && <Spotlight onClose={() => setSearchOpen(false)} />}
+    </>
+  )
 }
-
 export default Navbar

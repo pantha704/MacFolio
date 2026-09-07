@@ -58,32 +58,31 @@ const GitHubProfile = () => {
     Shell: '#89e051',
   }
 
+  const [error, setError] = useState(false)
+  const [retry, setRetry] = useState(0)
   useEffect(() => {
+    const controller = new AbortController()
+    let active = true
+    const timeout = window.setTimeout(() => controller.abort(), 12000)
     const fetchData = async () => {
+      setLoading(true)
+      setError(false)
       try {
-        const timestamp = Date.now()
-        const [userRes, reposRes, starredRes] = await Promise.all([
-          fetch(`https://api.github.com/users/pantha704?t=${timestamp}`),
-          fetch(`https://api.github.com/users/pantha704/repos?sort=updated&per_page=30&t=${timestamp}`),
-          fetch(`https://api.github.com/users/pantha704/starred?sort=created&per_page=10&t=${timestamp}`)
+        const responses = await Promise.all([
+          fetch('https://api.github.com/users/pantha704', { signal: controller.signal }),
+          fetch('https://api.github.com/users/pantha704/repos?sort=updated&per_page=30', { signal: controller.signal }),
+          fetch('https://api.github.com/users/pantha704/starred?sort=created&per_page=10', { signal: controller.signal }),
         ])
-
-        const userData = await userRes.json()
-        const reposData = await reposRes.json()
-        const starredData = await starredRes.json()
-
-        setUser(userData)
-        setRepos(reposData)
-        setStarred(starredData)
-      } catch (error) {
-        console.error('Error fetching GitHub data:', error)
-      } finally {
-        setLoading(false)
-      }
+        if (responses.some(response => !response.ok)) throw new Error('GitHub unavailable')
+        const [userData, reposData, starredData] = await Promise.all(responses.map(response => response.json()))
+        if (!userData.login || !Array.isArray(reposData) || !Array.isArray(starredData)) throw new Error('Invalid GitHub response')
+        if (active) { setUser(userData); setRepos(reposData); setStarred(starredData) }
+      } catch { if (active) setError(true) }
+      finally { clearTimeout(timeout); if (active) setLoading(false) }
     }
-
-    fetchData()
-  }, [])
+    void fetchData()
+    return () => { active = false; clearTimeout(timeout); controller.abort() }
+  }, [retry])
 
   const filteredRepos = repos.filter(repo =>
     repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -103,7 +102,7 @@ const GitHubProfile = () => {
     )
   }
 
-  if (!user) return null
+  if (error || !user) return <div className="empty-state" role="alert"><h2>GitHub couldn’t load right now.</h2><p>The connection may be unavailable or temporarily rate limited.</p><button className="secondary-action" onClick={() => setRetry(value => value + 1)}>Try again</button><p><a href="https://github.com/pantha704" target="_blank" rel="noopener noreferrer">Open GitHub directly</a></p></div>
 
   return (
     <div className="w-full h-full bg-[#0d1117] text-[#c9d1d9] overflow-y-auto font-sans [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#0d1117] [&::-webkit-scrollbar-thumb]:bg-[#30363d] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#484f58] [scrollbar-width:thin] [scrollbar-color:#30363d_#0d1117]">
@@ -130,7 +129,7 @@ const GitHubProfile = () => {
             <div className="relative group">
                 <img
                     src={user.avatar_url}
-                    alt="Profile"
+                    alt="Profile" crossOrigin="anonymous"
                     className="w-full rounded-full border border-[#30363d] shadow-lg z-10 relative"
                 />
                 <div className="absolute bottom-10 right-0 bg-[#30363d] p-2 rounded-full border border-[#6e7681] cursor-pointer hover:bg-[#30363d]/80 z-20">

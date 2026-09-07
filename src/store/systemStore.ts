@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { safeStorage } from '../utils/storage'
 import initialImages from '#constants/initialImages.json'
 
 interface SystemState {
@@ -22,11 +23,17 @@ export const useSystemStore = create<SystemState>()(
       wallpaper: '/images/wallpaper.png',
       setWallpaper: (url) => set({ wallpaper: url }),
       galleryImages: initialImages,
-      setGalleryImages: (images) => set({ galleryImages: images }),
-      addGalleryImage: (url) => set((state) => ({ galleryImages: [url, ...state.galleryImages] })),
+      setGalleryImages: (images) => set({ galleryImages: [...new Set(images)] }),
+      addGalleryImage: (url) => set((state) => ({ galleryImages: [...new Set([url, ...state.galleryImages])] })),
     }),
     {
       name: 'system-storage',
+      storage: createJSONStorage(() => safeStorage),
+      partialize: state => ({ wallpaper: state.wallpaper, galleryImages: state.galleryImages }),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<SystemState> | undefined
+        return { ...current, wallpaper: typeof saved?.wallpaper === 'string' ? saved.wallpaper : current.wallpaper, galleryImages: Array.isArray(saved?.galleryImages) && saved.galleryImages.every(item => typeof item === 'string') ? [...new Set(saved.galleryImages)] : current.galleryImages }
+      },
     }
   )
 )
