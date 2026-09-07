@@ -4,12 +4,16 @@
     "composite": true,
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "skipLibCheck": true,
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
@@ -18,23 +22,40 @@
     "moduleDetection": "force",
     "emitDeclarationOnly": true,
     "jsx": "react-jsx",
-
-    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "#*": ["./src/*"],
-      "#components/*": ["./src/components/*"],
-      "#constants/*": ["./src/constants/*"],
-      "#store/*": ["./src/store/*"],
-      "#hoc/*": ["./src/hoc/*"],
-      "#windows/*": ["./src/windows/*"],
-      "#context/*": ["./src/context/*"],
-      "#utils/*": ["./src/utils/*"]
-    }
+      "#*": [
+        "./src/*"
+      ],
+      "#components/*": [
+        "./src/components/*"
+      ],
+      "#constants/*": [
+        "./src/constants/*"
+      ],
+      "#store/*": [
+        "./src/store/*"
+      ],
+      "#hoc/*": [
+        "./src/hoc/*"
+      ],
+      "#windows/*": [
+        "./src/windows/*"
+      ],
+      "#context/*": [
+        "./src/context/*"
+      ],
+      "#utils/*": [
+        "./src/utils/*"
+      ]
+    },
+    "outDir": "./node_modules/.tmp/types/app"
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
