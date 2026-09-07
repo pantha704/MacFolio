@@ -2,9 +2,8 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
-import { PanelLeft, ChevronLeft, ChevronRight, Search, RotateCw, WifiOff } from 'lucide-react'
+import { PanelLeft, ChevronLeft, ChevronRight, Search, RotateCw, WifiOff, Github } from 'lucide-react'
 import GitHubProfile from '#components/apps/GitHubProfile'
-import { FaGithub } from 'react-icons/fa'
 import { useSystemStore } from '#store/systemStore'
 // import { FcGoogle } from 'react-icons/fc'
 // import { SiJavascript } from 'react-icons/si'
@@ -23,7 +22,7 @@ const Safari = () => {
   const bookmarks = [
     // { name: 'Gemini', url: 'https://gemini.google.com', Icon: FcGoogle, color: 'bg-white' },
     // { name: 'JS Mastery', url: 'https://jsmastery.pro', Icon: SiJavascript, color: 'bg-yellow-400' },
-    { name: 'GitHub', url: 'https://github.com/pantha704', Icon: FaGithub, color: 'bg-white/30 backdrop-blur-lg' },
+    { name: 'GitHub', url: 'https://github.com/pantha704', Icon: Github, color: 'bg-white/30 backdrop-blur-lg' },
   ]
 
   const handleSearch = (e: KeyboardEvent<HTMLInputElement>, fromStartPage = false) => {
