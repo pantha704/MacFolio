@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { dockApps } from '#constants'
-import { Tooltip } from 'react-tooltip'
 import { useGSAP } from '@gsap/react'
 import { useWindowStore } from '#store/useWindowStore'
 import gsap from 'gsap'
@@ -103,24 +102,23 @@ const Dock = () => {
     <section id="dock">
       <div ref={dockRef} className='dock-container scale-75 sm:scale-100 origin-bottom mb-2 sm:mb-0'>
         {dockApps.map(({id, name, icon, canOpen}) => (
-          <div key={id} className='relative flex justify-center items-center flex-col gap-1'>
+          <div key={id} className='group/dock-item relative flex justify-center items-center flex-col gap-1'>
             <button
               type='button'
               className='dock-icon'
               aria-label={name}
-              data-tooltip-id="dock-tooltip"
-              data-tooltip-content={name}
-              data-tooltip-delay-show={150}
               disabled={!canOpen}
               onClick={() => toggleApp({id, canOpen})}
             >
               <img src={'/images/' + icon} alt={name} className={canOpen ? "" : "opacity-50"}/>
             </button>
+            <span className="pointer-events-none absolute bottom-full mb-3 whitespace-nowrap rounded-md border border-white/10 bg-[#202020]/90 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-xl backdrop-blur-xl transition-opacity group-hover/dock-item:opacity-100 group-focus-within/dock-item:opacity-100">
+              {name}
+            </span>
             <div className={`size-1 rounded-full bg-white/50 ${windows[id as keyof typeof windows]?.isOpen ? 'opacity-100' : 'opacity-0'}`} />
           </div>
         ))}
       </div>
-      <Tooltip id="dock-tooltip" />
     </section>
   )
 }
