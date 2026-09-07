@@ -1,104 +1,81 @@
 import { useRef } from 'react'
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 
-const ANIMATION_CONFIG = {
-  subtitle: {
-    weight: { min: 100, max: 400, default: 100 },
-    scale: { min: 1, max: 1.5, default: 1 },
-  },
-  title: {
-    weight: { min: 400, max: 900, default: 400 },
-    scale: { min: 1, max: 1, default: 1 },
-  },
-}
-
-const renderText = (text: string, className: string, baseWeight = 400) => {
-  return [...text].map((char, i) => (
-    <span
-      key={i}
-      className={className}
-      style={{ fontVariationSettings: `'wght' ${baseWeight}` }}
-    >
-      {char === " " ? "\u00a0" : char}
+const renderText = (text: string, className: string) => (
+  [...text].map((char, index) => (
+    <span key={index} className={className} aria-hidden="true">
+      {char === ' ' ? '\u00a0' : char}
     </span>
   ))
-}
+)
 
-const setupTextHover = (container: HTMLElement | null, type: keyof typeof ANIMATION_CONFIG) => {
-  if (!container) return () => {}
+const setupTextHover = (container: HTMLElement | null) => {
+  if (!container || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}
 
-  const letters = container.querySelectorAll("span")
-  const { weight: weightConfig, scale: scaleConfig } = ANIMATION_CONFIG[type]
+  const letters = container.querySelectorAll('span')
 
-  const animateLetter = (letter: Element, weight: number, scale: number, duration = 0.25) => {
-    gsap.to(letter, {
-      duration,
-      ease: "power2.out",
-      fontVariationSettings: `'wght' ${weight}`,
-      scale: scale,
-      transformOrigin: "center center",
-    })
-  }
-
-  const handleMouseMove = (e: MouseEvent) => {
-    const { clientX, clientY } = e
-    const { left, top } = container.getBoundingClientRect()
-    const mouseX = clientX - left
-    const mouseY = clientY - top
-
+  const handleMouseMove = (event: MouseEvent) => {
     letters.forEach((letter) => {
-        const {
-          left: letterLeft,
-          width: letterWidth,
-          top: letterTop,
-          height: letterHeight,
-        } = letter.getBoundingClientRect();
+      const rect = letter.getBoundingClientRect()
+      const distance = Math.hypot(
+        event.clientX - (rect.left + rect.width / 2),
+        event.clientY - (rect.top + rect.height / 2),
+      )
+      const intensity = Math.exp(-(distance ** 2) / 7000)
 
-        const letterCenterX = letterLeft - left + letterWidth / 2;
-        const letterCenterY = letterTop - top + letterHeight / 2;
-        const distance = Math.sqrt(Math.pow(mouseX - letterCenterX, 2) + Math.pow(mouseY - letterCenterY, 2))
-
-        const intensity = Math.exp(-(distance ** 2) / 10000)
-
-        const newWeight = weightConfig.min + (weightConfig.max - weightConfig.min) * intensity
-        const newScale = scaleConfig.min + (scaleConfig.max - scaleConfig.min) * intensity
-
-        animateLetter(letter, newWeight, newScale)
+      gsap.to(letter, {
+        y: -8 * intensity,
+        scale: 1 + 0.12 * intensity,
+        duration: 0.2,
+        ease: 'power2.out',
+        transformOrigin: 'center bottom',
+      })
     })
   }
 
   const handleMouseLeave = () => {
-    letters.forEach(letter => animateLetter(letter, weightConfig.default, scaleConfig.default, 0.3))
+    gsap.to(letters, { y: 0, scale: 1, duration: 0.3, ease: 'power2.out' })
   }
 
-  container.addEventListener("mousemove", handleMouseMove)
-  container.addEventListener("mouseleave", handleMouseLeave)
+  container.addEventListener('mousemove', handleMouseMove)
+  container.addEventListener('mouseleave', handleMouseLeave)
 
   return () => {
-    container.removeEventListener("mousemove", handleMouseMove)
-    container.removeEventListener("mouseleave", handleMouseLeave)
+    container.removeEventListener('mousemove', handleMouseMove)
+    container.removeEventListener('mouseleave', handleMouseLeave)
   }
 }
 
 const Welcome = () => {
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const subtitleRef = useRef<HTMLParagraphElement>(null)
 
-  useGSAP(() => {
-    const titleCleanup = setupTextHover(titleRef.current, "title")
-    const subtitleCleanup = setupTextHover(subtitleRef.current, "subtitle")
-
-    return () => {
-      subtitleCleanup()
-      titleCleanup()
-    }
-  }, [])
+  useGSAP(() => setupTextHover(titleRef.current), [])
 
   return (
-    <section id="welcome">
-      <p ref={subtitleRef} className="cursor-default w-fit mx-auto mix-blend-difference text-white/90">{renderText("Hey, I'm Pratham! Welcome to my", "text-3xl font-georama", 100)}</p>
-      <h1 ref={titleRef} className='mt-7 cursor-default w-fit mx-auto mix-blend-difference text-white/90'>{renderText("portfolio", "text-9xl italic font-georama")}</h1>
+    <section id="welcome" aria-labelledby="welcome-title">
+      <p className="mb-4 rounded-full border border-white/15 bg-black/15 px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-white/75 backdrop-blur-xl">
+        FULL-STACK · WEB3 · AI / AUTOMATION
+      </p>
+
+      <p className="text-sm sm:text-lg md:text-xl font-medium text-white/75 drop-shadow-lg">
+        Hey, I’m Pratham Jaiswal.
+      </p>
+
+      <h1
+        id="welcome-title"
+        ref={titleRef}
+        aria-label="I build systems that ship."
+        className="mt-2 flex flex-wrap justify-center cursor-default text-center font-georama text-[clamp(3.2rem,8.6vw,8rem)] leading-[0.92] font-bold tracking-[-0.055em] text-white/95 drop-shadow-2xl"
+      >
+        {renderText('I build systems that ship.', 'inline-block')}
+      </h1>
+
+      <p className="mt-6 max-w-xl px-6 text-center text-xs sm:text-sm leading-6 text-white/65">
+        An interactive portfolio disguised as a Mac. Open Finder or press
+        <kbd className="mx-1.5 rounded-md border border-white/15 bg-black/20 px-1.5 py-0.5 text-[10px] text-white/80">⌘ / Ctrl K</kbd>
+        to explore.
+      </p>
     </section>
   )
 }
