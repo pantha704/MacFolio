@@ -1,4 +1,3 @@
-import dayjs from 'dayjs'
 import { navIcons } from '#constants'
 import { useEffect, useRef, useState } from 'react'
 import { useWindowStore } from '#store/useWindowStore'
@@ -7,13 +6,13 @@ import UserMenu from './menus/UserMenu'
 import Spotlight from './menus/Spotlight'
 
 const Navbar = () => {
-  const [time, setTime] = useState(dayjs())
+  const [time, setTime] = useState(() => new Date())
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const openWindow = useWindowStore((state) => state.openWindow)
 
   useEffect(() => {
-    const interval = window.setInterval(() => setTime(dayjs()), 20_000)
+    const interval = window.setInterval(() => setTime(new Date()), 20_000)
     return () => window.clearInterval(interval)
   }, [])
 
@@ -106,10 +105,14 @@ const Navbar = () => {
         <time
           dateTime={time.toISOString()}
           className="text-xs sm:text-sm font-medium min-w-[66px] sm:min-w-[140px] text-right"
-          title={time.format('dddd, MMMM D, YYYY h:mm A')}
+          title={new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeStyle: 'short' }).format(time)}
         >
-          <span className="hidden sm:inline">{time.format('ddd MMM D h:mm A')}</span>
-          <span className="sm:hidden">{time.format('h:mm A')}</span>
+          <span className="hidden sm:inline">
+            {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(time)}
+          </span>
+          <span className="sm:hidden">
+            {new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(time)}
+          </span>
         </time>
       </div>
 
