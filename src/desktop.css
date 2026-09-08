@@ -25,9 +25,13 @@ button:disabled {
 a {
   color:inherit;
 }
-button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:focus-visible {
-  outline:3px solid #a8caff;
-  outline-offset:4px;
+button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline:1px solid rgba(220,230,245,.65);
+  outline-offset:2px;
+}
+/* Window focus manages stacking; it should not draw a selection rectangle. */
+.desktop-window:focus {
+  outline:none;
 }
 button svg {
   flex-shrink:0;
