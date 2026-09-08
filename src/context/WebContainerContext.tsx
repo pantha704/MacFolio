@@ -1,50 +1,22 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { WebContainer } from '@webcontainer/api';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { WebContainer } from '@webcontainer/api'
 
-interface WebContainerContextType {
-  instance: WebContainer | null;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-const WebContainerContext = createContext<WebContainerContextType | null>(null);
-
-export const useWebContainer = () => {
-  const context = useContext(WebContainerContext);
-  if (!context) {
-    throw new Error('useWebContainer must be used within a WebContainerProvider');
-  }
-  return context;
-};
-
-export const WebContainerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [instance, setInstance] = useState<WebContainer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const bootingRef = useRef(false);
-
+interface WebContainerContextType { instance: WebContainer | null; isLoading: boolean; error: Error | null }
+const Context = createContext<WebContainerContextType | null>(null)
+let bootPromise: Promise<WebContainer> | null = null
+export function useWebContainer() { const context = useContext(Context); if (!context) throw new Error('Missing WebContainerProvider'); return context }
+export function WebContainerProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<WebContainerContextType>({ instance: null, isLoading: true, error: null })
   useEffect(() => {
-    async function boot() {
-      if (bootingRef.current || instance) return;
-
-      bootingRef.current = true;
-      try {
-        const webcontainer = await WebContainer.boot();
-        setInstance(webcontainer);
-      } catch (err) {
-        console.error('Failed to boot WebContainer:', err);
-        setError(err instanceof Error ? err : new Error('Failed to boot WebContainer'));
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    boot();
-  }, []);
-
-  return (
-    <WebContainerContext.Provider value={{ instance, isLoading, error }}>
-      {children}
-    </WebContainerContext.Provider>
-  );
-};
+    let cancelled = false
+    // One boot per page, including StrictMode remounts. Imported only after opening Terminal.
+    if (!bootPromise) bootPromise = (async () => {
+      if (!window.crossOriginIsolated) throw new Error('This browser cannot start the interactive shell.')
+      const { WebContainer } = await import('@webcontainer/api')
+      return WebContainer.boot()
+    })().catch(error => { bootPromise = null; throw error })
+    bootPromise.then(instance => { if (!cancelled) setState({ instance, isLoading: false, error: null }) }, error => { if (!cancelled) setState({ instance: null, isLoading: false, error: error instanceof Error ? error : new Error('The shell could not start.') }) })
+    return () => { cancelled = true }
+  }, [])
+  return <Context.Provider value={state}>{children}</Context.Provider>
+}

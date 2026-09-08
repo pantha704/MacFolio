@@ -1,155 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
 import { locations } from '#constants'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useWindowStore } from '#store/useWindowStore'
+import { ArrowLeft, ArrowUpRight, Search } from 'lucide-react'
+import { profile, projects } from '../data/portfolio'
 
-interface FinderItem {
-    id: number | string;
-    name: string;
-    icon: string;
-    kind?: string;
-    type?: string;
-    children?: FinderItem[];
-    repoUrl?: string;
-    fileType?: string;
-    href?: string;
-    [key: string]: any;
-}
-
-const Finder = ({ windowData }: { windowData?: { activeSide?: keyof typeof locations } }) => {
-  const [currentFolder, setCurrentFolder] = useState<FinderItem>(locations.work as FinderItem)
-  const [history, setHistory] = useState<FinderItem[]>([locations.work as FinderItem])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [activeSide, setActiveSide] = useState<keyof typeof locations>('work')
-
-  useEffect(() => {
-    if (windowData?.activeSide) {
-        const folder = locations[windowData.activeSide] as FinderItem
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        setCurrentFolder(folder)
-        setHistory([folder])
-        setCurrentIndex(0)
-        setActiveSide(windowData.activeSide)
-    }
-  }, [windowData])
-
-  const navigateTo = (folder: FinderItem) => {
-    const newHistory = history.slice(0, currentIndex + 1)
-    newHistory.push(folder)
-    setHistory(newHistory)
-    setCurrentIndex(newHistory.length - 1)
-    setCurrentFolder(folder)
-  }
-
-  const handleSideClick = (side: keyof typeof locations) => {
-    const folder = locations[side] as FinderItem
-    setActiveSide(side)
-    // Reset history when switching sidebar items
-    setHistory([folder])
-    setCurrentIndex(0)
-    setCurrentFolder(folder)
-  }
-
-  const goBack = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1
-      setCurrentIndex(newIndex)
-      setCurrentFolder(history[newIndex])
-    }
-  }
-
-  const goForward = () => {
-    if (currentIndex < history.length - 1) {
-      const newIndex = currentIndex + 1
-      setCurrentIndex(newIndex)
-      setCurrentFolder(history[newIndex])
-    }
-  }
-
-  const handleItemClick = (child: FinderItem) => {
-    if (child.kind === 'folder') {
-        navigateTo(child)
-    } else if (child.fileType === 'url' && child.href) {
-        window.open(child.href, '_blank')
-    } else if (child.repoUrl) {
-         // Fallback for old structure if any
-        const github1sUrl = child.repoUrl.replace('github.com', 'github1s.com')
-        window.open(github1sUrl, '_blank')
-    }
-  }
-
-  return (
-    <div className="w-full h-full flex flex-col bg-[#1e1e1e] rounded-xl overflow-hidden font-georama border border-gray-800 shadow-2xl text-gray-200">
-      {/* Header */}
-      <div className="window-header flex items-center gap-4 px-4 py-3 bg-[#2a2a2a] border-b border-gray-800">
-        <WindowControls target="finder" />
-
-        <div className="flex items-center gap-2 ml-4 text-gray-400">
-          <ChevronLeft
-            className={`icon w-5 h-5 transition-colors ${currentIndex > 0 ? 'cursor-pointer hover:text-white text-gray-400' : 'text-gray-600 cursor-default'}`}
-            onClick={goBack}
-          />
-          <ChevronRight
-            className={`icon w-5 h-5 transition-colors ${currentIndex < history.length - 1 ? 'cursor-pointer hover:text-white text-gray-400' : 'text-gray-600 cursor-default'}`}
-            onClick={goForward}
-          />
-        </div>
-
-        <span className="font-semibold text-gray-200 ml-2">
-            {currentFolder.name}
-        </span>
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-3 text-gray-400">
-        </div>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-48 bg-[#252525]/80 backdrop-blur-xl border-r border-gray-800 p-2 overflow-y-auto text-sm select-none [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#484f58] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#5a626e] [scrollbar-width:thin] [scrollbar-color:#484f58_transparent]">
-
-            <div className="mb-4">
-                <p className="text-[10px] font-semibold text-gray-500 px-2 mb-1">Favorites</p>
-                <ul>
-                    {Object.entries(locations).map(([key, loc]) => (
-                        <li
-                            key={key}
-                            className={`flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-colors ${activeSide === key ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5'}`}
-                            onClick={() => handleSideClick(key as keyof typeof locations)}
-                        >
-                            <img src={loc.icon} alt={loc.name} className="w-4 h-4" />
-                            <span>{loc.name}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 bg-[#1e1e1e] p-4 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#484f58] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#5a626e] [scrollbar-width:thin] [scrollbar-color:#484f58_transparent]">
-            <div className="grid grid-cols-4 gap-4">
-                {currentFolder.children?.map((child: FinderItem) => (
-                    <div
-                        key={child.id}
-                        className="flex flex-col items-center gap-1 group cursor-pointer p-2 rounded-md hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
-                        onClick={() => handleItemClick(child)}
-                        onDoubleClick={() => handleItemClick(child)}
-                    >
-                        <img src={child.icon} alt={child.name} className="w-12 h-12 object-contain drop-shadow-sm opacity-90 group-hover:opacity-100 transition-opacity" />
-                        <span className="text-xs text-center text-gray-300 font-medium px-1 rounded group-hover:text-white line-clamp-2 w-full break-words">
-                            {child.name}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
+type Side = keyof typeof locations
+type FinderData = { activeSide?: Side; projectId?: number }
+const FinderContent = ({ initial }: { initial?: FinderData }) => {
+  const [side, setSide] = useState<Side>(initial?.activeSide ?? 'work')
+  const [selected, setSelected] = useState<number | null>(initial?.projectId ?? null)
+  const [query, setQuery] = useState('')
+  const open = useWindowStore(state => state.openWindow)
+  const project = projects.find(item => item.id === selected)
+  const filtered = projects.filter(item => `${item.name} ${item.category} ${item.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase()))
+  return <div className="finder-app">
+    <div className="window-header flex items-center gap-5"><WindowControls target="finder" /><span>{project?.name ?? locations[side].name}</span></div>
+    <div className="finder-layout">
+      <aside className="finder-sidebar" aria-label="Finder folders"><p className="sidebar-label">Favorites</p>{Object.entries(locations).map(([key, location]) => <button key={key} title={location.name} aria-label={location.name} aria-current={side === key ? 'page' : undefined} onClick={() => { setSide(key as Side); setSelected(null); setQuery('') }}><img src={location.icon} alt="" /><span>{location.name}</span></button>)}</aside>
+      <div className="finder-main">
+        {side === 'work' && <>
+          <div className="finder-toolbar">{project && <button onClick={() => setSelected(null)} aria-label="Back to projects"><ArrowLeft size={18} /></button>}<Search size={18} aria-hidden="true" /><input aria-label="Filter projects" placeholder="Find a project or technology…" value={query} onChange={event => { setQuery(event.target.value); setSelected(null) }} /></div>
+          {project ? <article className="project-detail"><span className="project-category">{project.category}</span><h2>{project.name}</h2><p>{project.description}</p><div className="project-tags">{project.tags.map(tag => <span key={tag}>{tag}</span>)}</div><div className="project-links">{project.links.map((link, index) => <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className={index === 0 ? 'primary-action' : 'secondary-action'}>{link.label}<ArrowUpRight size={16} /></a>)}</div></article> : <><h2>Things I’ve built.</h2><p className="finder-subtitle">From interactive web experiences to experiments on Solana.</p><div className="finder-projects">{filtered.map(item => <button key={item.id} className="finder-project" onClick={() => setSelected(item.id)}><img src="/images/folder.png" alt="" width={48} height={48} /><strong>{item.name}</strong><span>{item.description}</span><span>{item.tags.join(' · ')}</span></button>)}</div>{!filtered.length && <p className="empty-state">No projects match “{query}”. Try a different name or technology.</p>}</>}
+        </>}
+        {side === 'about' && <article><img className="about-avatar" src={profile.avatar} alt={profile.name} crossOrigin="anonymous" /><h2>A little about me.</h2><p className="finder-subtitle">{profile.role} · {profile.location}</p><div className="about-copy">{locations.about.children.find(item => item.fileType === 'txt')?.description?.map(paragraph => <p key={paragraph}>{paragraph}</p>)}</div><dl className="skills-list"><div><dt>Web</dt><dd>React, Next.js, TypeScript</dd></div><div><dt>Blockchain</dt><dd>Solana, Rust, Anchor</dd></div></dl><button className="primary-action" onClick={() => open('contact')}>Get in touch <ArrowUpRight size={16} /></button></article>}
+        {side === 'resume' && <><h2>Résumé</h2><p className="finder-subtitle">View the PDF, or download a copy to read later.</p><div className="file-grid"><button onClick={() => open('resume')}><img src="/images/pdf.png" alt="" /><span>Résumé.pdf</span></button></div></>}
+        {side === 'trash' && <><h2>Archive</h2><p className="finder-subtitle">A few things kept around.</p><div className="file-grid">{locations.trash.children.map(item => <button key={item.id} onClick={() => open('imgfile', { name: item.name, imageUrl: item.imageUrl })}><img src={item.icon} alt="" /><span>{item.name}</span></button>)}</div></>}
       </div>
     </div>
-  )
+    <div className="finder-status">{side === 'work' ? `${filtered.length} projects` : locations[side].name} <span aria-hidden="true"> · </span> Pratham’s MacFolio</div>
+  </div>
 }
-
-const FinderWindow = WindowWrapper(Finder, 'finder')
-
-export default FinderWindow
+const Finder = ({ windowData }: { windowData?: FinderData }) => <FinderContent key={`${windowData?.activeSide ?? 'work'}-${windowData?.projectId ?? ''}`} initial={windowData} />
+export default WindowWrapper(Finder, 'finder')

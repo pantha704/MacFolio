@@ -1,93 +1,54 @@
-import { useEffect } from 'react'
-import { Navbar, Welcome, Dock, NoInternet } from "#components";
-import { Terminal, Safari, Finder, Gallery, Contact } from "#windows";
-import { Draggable } from "gsap/Draggable"
-import gsap from "gsap"
-import { useSystemStore } from "./store/systemStore"
-import { useWindowStore } from "./store/useWindowStore"
+import { lazy, Suspense, useEffect } from 'react'
+import Navbar from './components/Navbar'
+import Welcome from './components/Welcome'
+import Dock from './components/Dock'
+import NoInternet from './components/NoInternet'
+import { useSystemStore } from './store/systemStore'
+import { useWindowStore, type WindowKey } from './store/useWindowStore'
+import { WindowErrorBoundary } from './components/WindowErrorBoundary'
 
-gsap.registerPlugin(Draggable)
+const Safari = lazy(() => import('./windows/Safari'))
+const Finder = lazy(() => import('./windows/Finder'))
+const Gallery = lazy(() => import('./windows/Gallery'))
+const Contact = lazy(() => import('./windows/Contact'))
+const Terminal = lazy(() => import('./windows/Terminal'))
+const FilePreview = lazy(() => import('./windows/FilePreview'))
+const apps = { safari: Safari, finder: Finder, photos: Gallery, contact: Contact, terminal: Terminal }
 
 const App = () => {
   const { isWifiEnabled, wallpaper, setGalleryImages } = useSystemStore()
-
-  // Global key listener for Ctrl+W
+  const windows = useWindowStore(state => state.windows)
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-        // Use Alt+W instead of Ctrl+W to avoid browser conflict
-        if (e.altKey && (e.key === 'w' || e.key === 'W')) {
-            e.preventDefault()
-            e.stopPropagation()
-
-            const { windows, closeWindow } = useWindowStore.getState() // Access store directly
-            // Find active window (highest zIndex among open & not minimized)
-            const openWindows = Object.entries(windows).filter(([, w]) => w.isOpen && !w.isMinimized)
-            if (openWindows.length === 0) return
-
-            const maxZ = Math.max(...openWindows.map(([, w]) => w.zIndex))
-            const activeWindowEntry = openWindows.find(([, w]) => w.zIndex === maxZ)
-
-            if (activeWindowEntry) {
-                const [key] = activeWindowEntry
-                closeWindow(key as any)
-            }
-        }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!event.altKey || event.key.toLowerCase() !== 'w') return
+      event.preventDefault()
+      const { windows, closeWindow } = useWindowStore.getState()
+      const active = Object.entries(windows).filter(([, item]) => item.isOpen && !item.isMinimized).sort((a, b) => b[1].zIndex - a[1].zIndex)[0]
+      if (active) closeWindow(active[0] as WindowKey)
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
-
-  // Migrate legacy gallery images
   useEffect(() => {
-    const legacyImages = localStorage.getItem('gallery_images_v2')
-    if (legacyImages) {
-        try {
-            const parsed = JSON.parse(legacyImages)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                setGalleryImages(parsed)
-            }
-            localStorage.removeItem('gallery_images_v2') // Clear legacy key after migration
-        } catch (e) {
-            console.error('Failed to migrate legacy gallery images', e)
-        }
-    }
+    try {
+      const legacy = localStorage.getItem('gallery_images_v2')
+      if (legacy) {
+        const parsed: unknown = JSON.parse(legacy)
+        if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) setGalleryImages(parsed)
+        localStorage.removeItem('gallery_images_v2')
+      }
+    } catch { /* Storage may be unavailable; the portfolio still works. */ }
   }, [setGalleryImages])
-
-  console.log('Current wallpaper:', wallpaper)
-
   return (
-    <main className="relative w-full h-screen overflow-hidden">
-      {/* Wallpaper Image with CORS support */}
-      <div className="absolute inset-0">
-        <img
-            key={wallpaper} // Force re-render on change
-            src={wallpaper}
-            alt="wallpaper"
-            className="w-full h-full object-cover"
-            crossOrigin="anonymous"
-            referrerPolicy="no-referrer"
-            onError={(e) => console.error("Wallpaper load error:", e)}
-        />
-      </div>
-
+    <main className="desktop-shell">
+      <a className="skip-link" href="#portfolio">Skip to portfolio</a>
+      <div className="desktop-wallpaper" aria-hidden="true"><img key={wallpaper} src={wallpaper} alt="" fetchPriority="high" crossOrigin="anonymous" onError={event => { if (!event.currentTarget.src.endsWith('/images/wallpaper.png')) event.currentTarget.src = '/images/wallpaper.png' }} /></div>
       <Navbar />
-      {isWifiEnabled ? (
-        <>
-            <Welcome />
-            <Dock />
-
-            <Safari />
-            <Finder />
-            <Terminal />
-            <Gallery />
-            <Contact />
-        </>
-      ) : (
-        <NoInternet />
-      )}
+      {isWifiEnabled ? <Welcome /> : <NoInternet />}
+      <Dock />
+      {Object.entries(apps).map(([key, AppWindow]) => windows[key as WindowKey].isOpen && <WindowErrorBoundary key={key} windowKey={key as WindowKey}><Suspense fallback={<div role="status" className="app-loading">Opening {key}…</div>}><AppWindow /></Suspense></WindowErrorBoundary>)}
+      {(['resume', 'txtfile', 'imgfile'] as const).map(key => windows[key].isOpen && <WindowErrorBoundary key={key} windowKey={key}><Suspense fallback={<div role="status" className="app-loading">Opening file…</div>}><FilePreview target={key} /></Suspense></WindowErrorBoundary>)}
     </main>
   )
 }
-
 export default App

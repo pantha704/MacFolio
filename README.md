@@ -1,78 +1,71 @@
 # MacFolio
 
-A pixel-perfect, browser-based recreation of the macOS experience. Built with React, TypeScript, and Vite to demonstrate advanced frontend engineering capabilities.
+Pratham Jaiswal’s interactive portfolio, built as a personal desktop with React, TypeScript, Vite, Tailwind CSS, and Zustand.
 
-![MacFolio Preview](https://img.shields.io/badge/Status-Live-success?style=for-the-badge)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)
+## Experience
 
-## Overview
+- A responsive desktop with a clear introduction and selected project shortcuts.
+- Finder with project filtering, project details, source/live links, about information, and résumé access.
+- Spotlight search: use **Command K** or **Control K**, arrow keys, Enter, and Escape.
+- Windows that drag and resize within the available desktop, preserve geometry through maximize/restore, and retain application state while minimized. Use **Alt W** to close the active window.
+- Keyboard-operable window controls and resize handle, visible focus, reduced-motion support, and mobile windows that leave the dock accessible.
+- Résumé PDF viewing/downloads and image/text preview windows.
+- Contact links and copy-email feedback.
+- Gallery with favorites, photo navigation, wallpaper selection, and optional Cloudinary uploads. Collection/favorites changes belong to the visitor’s browser, not a shared database.
+- Safari with a GitHub profile view, safe web navigation, request cancellation/timeouts, and retry states.
+- A real WebContainer shell loaded only when Terminal opens, with a readable fallback on unsupported browsers.
 
-MacFolio is more than just a portfolio; it's an immersive operating system simulation running entirely in the browser. It features a fully functional window management system, a dynamic dock, and a suite of integrated applications that mirror their native counterparts.
+The original public identity, project links, résumé, and image collection are preserved. No project impact metrics or employment claims have been invented.
 
-## Key Features
+## Run locally
 
-- **Desktop Environment**:
+Use Node.js **24 LTS** and npm with the committed `package-lock.json`:
 
-  - **Window Management**: Draggable, resizable, and stackable windows with z-index handling.
-  - **Dock**: Interactive dock with magnification effects and app launching.
-  - **Menu Bar**: Functional clock, control center, and system menus.
-  - **Wallpaper Engine**: Set any image from the Gallery as your desktop background with a single click.
+```sh
+npm ci
+npm run dev
+```
 
-- **Integrated Applications**:
+The historical `bun.lock` is retained, but npm is the verified install path for this revision. Do not alternate package managers when updating dependencies.
 
-  - **Finder**: Navigate a virtual file system with support for nested folders and file previews.
-  - **Safari**: A functional browser simulation for viewing project demos and articles.
-  - **Gallery**: Browse photos, manage favorites, and customize your wallpaper.
-  - **Terminal**: A fully interactive terminal emulator (xterm.js) with custom commands.
-  - **Contact**: A sleek, animated card for professional outreach.
+## Validate
 
-- **Technical Highlights**:
-  - **Performance**: Built on Vite for lightning-fast HMR and production builds.
-  - **State Management**: Zustand for global state (wallpaper, wifi, window status).
-  - **Animations**: Powered by GSAP and Tailwind CSS for smooth, native-like transitions.
-  - **Type Safety**: strict TypeScript configuration for robust code quality.
+```sh
+node --test tests/*.test.mjs
+npm run build
+```
 
-## Getting Started
+The tests cover window bounds, window-state transitions, safe URL routing, and corrupted/blocked browser storage. CI runs these checks on pull requests and pushes to `master`.
 
-### Prerequisites
+The build performs TypeScript checks and creates `dist/`. TypeScript is configured not to emit declarations beside source files. Historical generated declaration files remain in the repository; they are not build outputs of this revision.
 
-- Node.js 18+ or Bun (recommended)
+Automated build and logic checks do **not** replace browser testing. Before merging, check the flows in [REVIEW.md](REVIEW.md), particularly the live shell, PDF viewer, gallery provider, mobile layouts, and keyboard interactions.
 
-### Installation
+## Customize
 
-1.  **Clone the repository**
+| Content | Location |
+| --- | --- |
+| Name, role, email, avatar, social links | `src/data/portfolio.ts` |
+| Project folder names and URLs, original bio | `src/constants/index.ts` |
+| Project summaries, categories, tags | `src/data/portfolio.ts` |
+| Desktop layout and copy | `src/components/Welcome.tsx` |
+| Desktop/window styles | `src/desktop.css` |
+| Résumé | `public/files/resume.pdf` |
+| Default gallery | `src/constants/initialImages.json` |
+| Search title/description and no-JavaScript fallback | `index.html` |
 
-    ```bash
-    git clone https://github.com/pantha704/MacFolio.git
-    cd MacFolio
-    ```
+When changing identity, update `index.html` and the original about text as well. The current source identifies the owner as **Pratham Jaiswal**; it has not been replaced using information from outside the repository.
 
-2.  **Install dependencies**
+## Optional photo uploads
 
-    ```bash
-    bun install
-    # or
-    npm install
-    ```
+Copy `.env.example` to `.env.local` and fill in the Cloudinary cloud name and unsigned upload preset. Without both values, the upload button is hidden and the existing gallery remains usable.
 
-3.  **Start development server**
+The browser accepts JPG, PNG, WebP, or GIF under 10 MB and reports upload failures/timeouts. Also enforce limits and allowed formats on the Cloudinary preset. An unsigned preset is public and permits uploads: do not enable it unless visitor uploads are intentional. Use a server-authorized upload flow if moderation, per-user quotas, or private uploads become necessary. Never expose a Cloudinary API secret in `VITE_` variables.
 
-    ```bash
-    bun run dev
-    ```
+Removing/resetting gallery items only changes this browser’s collection. It does not delete cloud assets. Favorites and wallpaper preferences stay local; if storage is blocked, the app continues in memory.
 
-4.  **Build for production**
+## Deployment
 
-    ```bash
-    bun run build
-    ```
+Use the existing Vercel project with build command `npm run build` and output directory `dist`. Preserve `vercel.json`: the real terminal needs its cross-origin isolation headers. Other static hosts must send equivalent headers. The browser, WebContainer runtime, external image provider, and unauthenticated GitHub API impose availability/compatibility limits; the portfolio supplies fallbacks rather than assuming they always work.
 
-## Customization
-
-MacFolio is designed to be easily customizable.
-
-- **Personal Data**: Edit `src/constants/index.ts` to update your projects, social links, and bio.
-- **Images**: Add your assets to `public/images` and reference them in the configuration.
-- **Styles**: Global styles are defined in `src/index.css`, using Tailwind CSS for component styling.
+This change does not require a database, new paid service, or a hosting migration. Search metadata and a no-JavaScript contact/résumé fallback are included. The full interactive content is client rendered; static prerendering would be a separate enhancement if search indexing becomes a primary goal.

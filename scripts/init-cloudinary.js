@@ -6,11 +6,17 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration
+// Server-side setup credentials only. Never expose these as VITE_ variables.
+const required = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+const missing = required.filter(name => !process.env[name]);
+if (missing.length) {
+  console.error(`Missing environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
 cloudinary.config({
-  cloud_name: "dtf88ojhi",
-  api_key: "335146622887452",
-  api_secret: "Y0pBOYMJ1mEStd1T9uYrJeVfDlY",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const UPLOAD_PRESET_NAME = "macos_portfolio_uploads";
@@ -28,7 +34,8 @@ async function initCloudinary() {
         name: UPLOAD_PRESET_NAME,
         unsigned: true,
         folder: "macos-portfolio",
-        allowed_formats: "jpg,png,jpeg,svg,webp",
+        allowed_formats: "jpg,png,jpeg,webp,gif",
+          max_file_size: 10 * 1024 * 1024,
       });
       console.log(`✅ Created upload preset: ${UPLOAD_PRESET_NAME}`);
     } catch (error) {
@@ -42,11 +49,12 @@ async function initCloudinary() {
         await cloudinary.api.update_upload_preset(UPLOAD_PRESET_NAME, {
           unsigned: true,
           folder: "macos-portfolio",
-          allowed_formats: "jpg,png,jpeg,svg,webp",
+          allowed_formats: "jpg,png,jpeg,webp,gif",
+          max_file_size: 10 * 1024 * 1024,
         });
         console.log(`✅ Updated upload preset: ${UPLOAD_PRESET_NAME}`);
       } else {
-        console.error("❌ Error creating preset:", error);
+        throw new Error("Could not configure upload preset");
       }
     }
 
@@ -54,8 +62,9 @@ async function initCloudinary() {
     console.log("📤 Uploading local images...");
     const files = fs
       .readdirSync(ASSETS_DIR)
-      .filter((file) => /\.(jpg|jpeg|png|svg|webp)$/i.test(file));
+      .filter((file) => /\.(jpg|jpeg|png|webp|gif)$/i.test(file));
     const uploadedUrls = [];
+    let failures = 0;
 
     for (const file of files) {
       const filePath = path.join(ASSETS_DIR, file);
@@ -69,21 +78,26 @@ async function initCloudinary() {
         });
         uploadedUrls.push(result.secure_url);
       } catch (err) {
-        console.error(`   ❌ Failed to upload ${file}:`, err.message);
+        failures++;
+        console.error(`   ❌ Failed to upload ${file}`);
       }
     }
 
+    if (failures || !uploadedUrls.length) throw new Error("Incomplete upload: existing manifest was preserved");
+
     // 3. Save URLs to JSON
     console.log(`💾 Saving ${uploadedUrls.length} URLs to ${OUTPUT_FILE}...`);
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(uploadedUrls, null, 2));
+    fs.writeFileSync(`${OUTPUT_FILE}.tmp`, JSON.stringify(uploadedUrls, null, 2));
+    fs.renameSync(`${OUTPUT_FILE}.tmp`, OUTPUT_FILE);
 
     console.log("✨ Cloudinary Initialization Complete!");
     console.log("-----------------------------------");
-    console.log("Cloud Name: dtf88ojhi");
+    console.log("Cloud configuration loaded from environment.");
     console.log(`Upload Preset: ${UPLOAD_PRESET_NAME}`);
     console.log("-----------------------------------");
   } catch (error) {
-    console.error("❌ Fatal Error:", error);
+    console.error("Initialization failed; verify configuration and provider availability. Existing manifest was preserved.");
+    process.exitCode = 1;
   }
 }
 

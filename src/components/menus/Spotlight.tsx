@@ -1,66 +1,46 @@
-import { Search, Calculator, Calendar, Folder } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { Search, ArrowUpRight, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useWindowStore } from '#store/useWindowStore'
+import { projects } from '../../data/portfolio'
 
 const Spotlight = ({ onClose }: { onClose: () => void }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState(0)
+  const open = useWindowStore(state => state.openWindow)
+  const items = [
+    { title: 'All projects', detail: 'Explore my work', action: () => open('finder', { activeSide: 'work' }) },
+    { title: 'About me', detail: 'Background and skills', action: () => open('finder', { activeSide: 'about' }) },
+    { title: 'Contact', detail: 'Email and social links', action: () => open('contact') },
+    { title: 'Résumé', detail: 'View or download PDF', action: () => open('resume') },
+    { title: 'Gallery', detail: 'Photos and wallpapers', action: () => open('photos') },
+    { title: 'Terminal', detail: 'Interactive shell', action: () => open('terminal') },
+    { title: 'Safari', detail: 'Browse and explore GitHub', action: () => open('safari') },
+    ...projects.map(project => ({ title: project.name, detail: project.category, action: () => open('finder', { projectId: project.id }) })),
+  ].filter(item => `${item.title} ${item.detail}`.toLowerCase().includes(query.trim().toLowerCase()))
   useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null
+    dialogRef.current?.showModal()
     inputRef.current?.focus()
+    return () => { previous?.focus() }
   }, [])
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[20vh]" onClick={onClose}>
-        {/* Backdrop is handled by the parent or this div itself */}
-      <div
-        className="w-[600px] bg-[#1e1e1e]/80 backdrop-blur-2xl border border-white/20 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-4 px-4 py-4 border-b border-white/10">
-            <Search className="w-6 h-6 text-gray-400" />
-            <input
-                ref={inputRef}
-                type="text"
-                placeholder="Spotlight Search"
-                className="w-full bg-transparent text-2xl text-white placeholder-gray-500 outline-none font-light"
-            />
-        </div>
-
-        <div className="p-2">
-            <div className="px-3 py-1 text-xs text-gray-500 font-medium mb-1">Top Hits</div>
-
-            <div className="flex items-center gap-3 px-3 py-2 hover:bg-blue-600 rounded-lg cursor-pointer group transition-colors">
-                <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <Calculator className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-white font-medium text-sm">Calculator</span>
-                    <span className="text-gray-400 text-xs group-hover:text-blue-200">Application</span>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3 px-3 py-2 hover:bg-blue-600 rounded-lg cursor-pointer group transition-colors">
-                <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <Folder className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-white font-medium text-sm">Projects</span>
-                    <span className="text-gray-400 text-xs group-hover:text-blue-200">Folder</span>
-                </div>
-            </div>
-
-             <div className="flex items-center gap-3 px-3 py-2 hover:bg-blue-600 rounded-lg cursor-pointer group transition-colors">
-                <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-white font-medium text-sm">Calendar</span>
-                    <span className="text-gray-400 text-xs group-hover:text-blue-200">Application</span>
-                </div>
-            </div>
-        </div>
-      </div>
-    </div>
+  useEffect(() => { document.getElementById(`spotlight-${selected}`)?.scrollIntoView({ block: 'nearest' }) }, [selected])
+  const run = (index: number) => { if (items[index]) { items[index].action(); onClose() } }
+  return createPortal(
+    <dialog ref={dialogRef} className="spotlight" aria-label="Search portfolio" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
+      <div className="spotlight-input"><Search size={22} /><input ref={inputRef} aria-label="Search apps and projects" role="combobox" aria-expanded="true" aria-controls="spotlight-results" aria-autocomplete="list" aria-activedescendant={items.length ? `spotlight-${selected}` : undefined} value={query} placeholder="Search projects, apps, anything…" onChange={event => { setQuery(event.target.value); setSelected(0) }} onKeyDown={event => {
+        if (event.key === 'ArrowDown') { event.preventDefault(); setSelected(index => Math.min(index + 1, items.length - 1)) }
+        if (event.key === 'ArrowUp') { event.preventDefault(); setSelected(index => Math.max(0, index - 1)) }
+        if (event.key === 'Enter') { event.preventDefault(); run(selected) }
+      }} /><button aria-label="Close search" onClick={onClose}><X size={18} /></button></div>
+      <ul id="spotlight-results" role="listbox" aria-label="Search results">
+        {items.map((item, index) => <li id={`spotlight-${index}`} key={item.title} role="option" aria-selected={selected === index} onMouseMove={() => setSelected(index)} onClick={() => run(index)}><span><strong>{item.title}</strong><small>{item.detail}</small></span><ArrowUpRight size={18} /></li>)}
+      </ul>
+      {!items.length && <p className="empty-state">No matches. Try “projects”, “contact”, or “terminal”.</p>}
+      <div className="spotlight-footer">↑ ↓ to navigate <span>Enter to open · Esc to close</span></div>
+    </dialog>, document.body,
   )
 }
-
 export default Spotlight
