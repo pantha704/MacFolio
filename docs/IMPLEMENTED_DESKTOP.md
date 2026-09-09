@@ -21,3 +21,7 @@ Limits:
 - Node shell depends on browser/runtime support; portfolio commands remain available independently.
 - Physical mobile-device interaction, uploads, and third-party deployments were not exhaustively tested.
 - MASTER_PLAN.md remains a roadmap; its other proposals are not implicitly complete.
+
+## Terminal correction
+
+The limited portfolio command desk was a regression and has been removed. Terminal now opens the real WebContainer Node shell directly. Startup and shell-spawn timeouts are 60 seconds; failures show the runtime error and a reload action. A real runtime session is required for node/npm/npx; this correction does not claim compatibility with every mobile browser. Build and regression checks do not substitute for successful runtime execution.

@@ -11,11 +11,11 @@ export function WebContainerProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     // One boot per page, including StrictMode remounts. Imported only after opening Terminal.
     if (!bootPromise) bootPromise = (async () => {
-      if (!window.crossOriginIsolated) throw new Error('This browser cannot start the interactive shell.')
+      if (!window.crossOriginIsolated) throw new Error(window.isSecureContext ? 'The shell requires cross-origin isolation. Reload the site in a supported browser.' : 'The shell requires a secure HTTPS connection.')
       const { WebContainer } = await import('@webcontainer/api')
       return WebContainer.boot()
     })().catch(error => { bootPromise = null; throw error })
-    const timer = setTimeout(() => { if (!cancelled) { cancelled = true; setState({ instance: null, isLoading: false, error: new Error('The Node runtime did not respond. Switch back to Portfolio commands, or reload to retry.') }) } }, 15000)
+    const timer = setTimeout(() => { if (!cancelled) { cancelled = true; setState({ instance: null, isLoading: false, error: new Error('The Node runtime did not respond within 60 seconds. Reload to retry. Browser privacy settings or network restrictions may be blocking startup.') }) } }, 60000)
     bootPromise.then(instance => { clearTimeout(timer); if (!cancelled) setState({ instance, isLoading: false, error: null }) }, error => { clearTimeout(timer); if (!cancelled) setState({ instance: null, isLoading: false, error: error instanceof Error ? error : new Error('The shell could not start.') }) })
     return () => { cancelled = true; clearTimeout(timer) }
   }, [])
