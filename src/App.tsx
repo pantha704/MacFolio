@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Welcome from './components/Welcome'
 import Dock from './components/Dock'
+import DynamicWallpaper from './components/DynamicWallpaper'
 import NoInternet from './components/NoInternet'
 import { useSystemStore } from './store/systemStore'
 import { useWindowStore, type WindowKey } from './store/useWindowStore'
@@ -13,10 +14,12 @@ const Gallery = lazy(() => import('./windows/Gallery'))
 const Contact = lazy(() => import('./windows/Contact'))
 const Terminal = lazy(() => import('./windows/Terminal'))
 const FilePreview = lazy(() => import('./windows/FilePreview'))
-const apps = { safari: Safari, finder: Finder, photos: Gallery, contact: Contact, terminal: Terminal }
+const Settings = lazy(() => import('./windows/Settings'))
+const Arcade = lazy(() => import('./windows/Arcade'))
+const apps = { settings: Settings, arcade: Arcade, safari: Safari, finder: Finder, photos: Gallery, contact: Contact, terminal: Terminal }
 
 const App = () => {
-  const { isWifiEnabled, wallpaper, setGalleryImages } = useSystemStore()
+  const { isWifiEnabled, setGalleryImages } = useSystemStore()
   const windows = useWindowStore(state => state.windows)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -42,7 +45,7 @@ const App = () => {
   return (
     <main className="desktop-shell">
       <a className="skip-link" href="#portfolio">Skip to portfolio</a>
-      <div className="desktop-wallpaper" aria-hidden="true"><img key={wallpaper} src={wallpaper} alt="" fetchPriority="high" crossOrigin="anonymous" onError={event => { if (!event.currentTarget.src.endsWith('/images/wallpaper.png')) event.currentTarget.src = '/images/wallpaper.png' }} /></div>
+      <DynamicWallpaper />
       <Navbar />
       {isWifiEnabled ? <Welcome /> : <NoInternet />}
       <Dock />

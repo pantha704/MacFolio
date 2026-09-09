@@ -1,0 +1,8 @@
+import WindowWrapper from '#hoc/WindowWrapper'
+import WindowControls from '#components/WindowControls'
+import { useAppearance } from '../store/appearance'
+const Settings = () => {
+ const p = useAppearance()
+ return <div className="settings-app"><header className="window-header"><WindowControls target="settings"/><span>Desktop & appearance</span></header><div className="settings-content"><h2>A desktop that follows your day.</h2><p>Automatic photo lighting uses your device’s local clock. No location tracking.</p><div className="scene-options">{(['auto','dawn','day','evening','night','rotate','photo'] as const).map(mode => <button key={mode} aria-pressed={p.mode === mode} onClick={() => p.update({mode})}><span className={`scene-swatch phase-${mode}`}/>{({auto:'Local time',rotate:'Rotate · 5 min',photo:'My photo',dawn:'Dawn',day:'Day',evening:'Evening',night:'Night'})[mode]}</button>)}</div><label><input type="checkbox" checked={p.motion} onChange={e => p.update({motion:e.target.checked})}/> Animate the landscape</label><label><input type="checkbox" checked={p.seasonal} onChange={e => p.update({seasonal:e.target.checked})}/> Seasonal photo colours</label><label>Hemisphere <select value={p.south ? 'south' : 'north'} onChange={e => p.update({south:e.target.value === 'south'})}><option value="north">Northern</option><option value="south">Southern</option></select></label><p>The same photograph is colour-graded for time and season; it is not live weather footage. Seasons follow calendar months. Animation respects your device’s reduced-motion preference. Choose a picture in Photos to use it here.</p></div></div>
+}
+export default WindowWrapper(Settings, 'settings')

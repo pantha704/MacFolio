@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ComponentType, type PointerEvent } fr
 import { useWindowStore, type WindowKey } from '#store/useWindowStore'
 import { clampWindow, windowBounds, type WindowRect } from '../utils/windowGeometry'
 
-const labels: Record<WindowKey, string> = { finder: 'Finder', contact: 'Contact', resume: 'Résumé', safari: 'Safari', photos: 'Gallery', terminal: 'Terminal', txtfile: 'Text preview', imgfile: 'Image preview' }
+const labels: Record<WindowKey, string> = { settings: 'Settings', arcade: 'Arcade', finder: 'Finder', contact: 'Contact', resume: 'Résumé', safari: 'Safari', photos: 'Gallery', terminal: 'Terminal', txtfile: 'Text preview', imgfile: 'Image preview' }
 
 const WindowWrapper = (Component: ComponentType<Record<string, unknown>>, windowKey: WindowKey) => {
   const Wrapped = (props: Record<string, unknown>) => {

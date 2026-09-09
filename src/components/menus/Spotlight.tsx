@@ -11,6 +11,8 @@ const Spotlight = ({ onClose }: { onClose: () => void }) => {
   const [selected, setSelected] = useState(0)
   const open = useWindowStore(state => state.openWindow)
   const items = [
+    { title: 'Settings', detail: 'Wallpaper and appearance', action: () => open('settings') },
+    { title: 'Arcade', detail: 'Pinball, paddle ball and racing', action: () => open('arcade') },
     { title: 'All projects', detail: 'Explore my work', action: () => open('finder', { activeSide: 'work' }) },
     { title: 'About me', detail: 'Background and skills', action: () => open('finder', { activeSide: 'about' }) },
     { title: 'Contact', detail: 'Email and social links', action: () => open('contact') },

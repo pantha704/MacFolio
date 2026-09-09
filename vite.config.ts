@@ -14,6 +14,8 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    host: "0.0.0.0",
+    allowedHosts: ["terminal.local"],
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',

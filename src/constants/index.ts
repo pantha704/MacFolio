@@ -484,6 +484,8 @@ export const locations = {
 const INITIAL_Z_INDEX = 1000;
 
 const WINDOW_CONFIG = {
+  settings: { isOpen: false, zIndex: INITIAL_Z_INDEX, data: null },
+  arcade: { isOpen: false, zIndex: INITIAL_Z_INDEX, data: null },
   finder: { isOpen: false, zIndex: INITIAL_Z_INDEX, data: null },
   contact: { isOpen: false, zIndex: INITIAL_Z_INDEX, data: null },
   resume: { isOpen: false, zIndex: INITIAL_Z_INDEX, data: null },
