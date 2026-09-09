@@ -1,5 +1,7 @@
 # MacFolio: a living personal desktop
 
+> Historical roadmap. See [IMPLEMENTATION_BLUEPRINT.md](./IMPLEMENTATION_BLUEPRINT.md) for the current source audit, requirement contracts, and release gates. In particular, the old recommendation below for a default simulated portfolio Terminal is superseded: the real Node shell remains the default.
+
 Status: implementation roadmap, not a claim that the planned features already exist.
 Prepared 2026-09-08. Baseline: master c9ccf24 and upgrade PR #3 at 7af0e3a. Continue on codex/macfolio-upgrade as requested. The current PR is an interim foundation; its landing-style introduction is not the final desktop direction.
 
@@ -147,7 +149,7 @@ Security work: rotate the exposed Cloudinary credentials; audit historical expos
 
 Dependencies: phases 1–2 precede live wallpapers; app lifecycle precedes games; actual case-study content precedes SEO publication. Security remediation is immediate. Each completed phase reports changes, evidence, remaining limits, and the next bounded milestone. Effort labels are planning estimates, not promised deadlines.
 
-Current merge scope: existing PR foundation + this plan + setup-script sanitation. Dynamic wallpaper phases, seasons, arcade, full native desktop interactions, and comprehensive browser verification are NOT complete in this merge. Merging the foundation is explicitly authorized by the owner; it is not certification of the final vision.
+Implementation update: `codex/macfolio-upgrade` now includes the desktop-core, still-wallpaper, Finder/Safari/Photos/Terminal depth, and three-game arcade work recorded in `IMPLEMENTED_DESKTOP.md`. This still does not certify every long-range proposal in this roadmap; the explicit remaining boundaries in that release record continue to apply.
 
 ## 10. Validation and next executable work
 

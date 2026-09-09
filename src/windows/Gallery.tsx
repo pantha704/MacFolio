@@ -17,10 +17,11 @@ function Lightbox({ images: initialCollection, initial, favorites, onFavorite, o
   const [selected, setSelected] = useState(initial)
   const wallpaper = useSystemStore(state => state.wallpaper)
   const setWallpaper = useSystemStore(state => state.setWallpaper)
+  const clearWallpaper = useSystemStore(state => state.clearWallpaper)
   const index = images.indexOf(selected)
   const step = (delta: number) => { if (images.length) setSelected(images[(Math.max(0, index) + delta + images.length) % images.length]) }
   useEffect(() => { const previous = document.activeElement as HTMLElement | null; dialog.current?.showModal(); return () => previous?.focus() }, [])
-  return createPortal(<dialog ref={dialog} className="gallery-lightbox" aria-label="Photo preview" onCancel={onClose} onKeyDown={event => { if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1) } if (event.key === 'ArrowRight') { event.preventDefault(); step(1) } }} onClick={event => { if (event.target === event.currentTarget) onClose() }}><div className="lightbox-toolbar"><span>{Math.max(0, index) + 1} / {images.length}</span><div><button onClick={() => setWallpaper(wallpaper === selected ? '/images/wallpaper.png' : selected)} aria-label={wallpaper === selected ? 'Reset wallpaper' : 'Set as wallpaper'} title={wallpaper === selected ? 'Reset wallpaper' : 'Set as wallpaper'} aria-pressed={wallpaper === selected}><Monitor size={20} /></button><button onClick={() => onFavorite(selected)} aria-label={favorites.includes(selected) ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorites.includes(selected)}><Heart size={20} fill={favorites.includes(selected) ? 'currentColor' : 'none'} /></button><button onClick={onClose} aria-label="Close photo"><X size={22} /></button></div></div><div className="lightbox-image"><button onClick={() => step(-1)} aria-label="Previous photo"><ArrowLeft size={24} /></button><img src={selected} alt="Selected gallery photograph" crossOrigin="anonymous" /><button onClick={() => step(1)} aria-label="Next photo"><ArrowRight size={24} /></button></div><p>Use ← → to browse · Esc to close</p></dialog>, document.body)
+  return createPortal(<dialog ref={dialog} className="gallery-lightbox" aria-label="Photo preview" onCancel={onClose} onKeyDown={event => { if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1) } if (event.key === 'ArrowRight') { event.preventDefault(); step(1) } }} onClick={event => { if (event.target === event.currentTarget) onClose() }}><div className="lightbox-toolbar"><span>{Math.max(0, index) + 1} / {images.length}</span><div><button onClick={() => wallpaper === selected ? clearWallpaper() : setWallpaper(selected)} aria-label={wallpaper === selected ? 'Return to automatic wallpaper' : 'Set as wallpaper'} title={wallpaper === selected ? 'Return to automatic wallpaper' : 'Set as wallpaper'} aria-pressed={wallpaper === selected}><Monitor size={20} /></button><button onClick={() => onFavorite(selected)} aria-label={favorites.includes(selected) ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorites.includes(selected)}><Heart size={20} fill={favorites.includes(selected) ? 'currentColor' : 'none'} /></button><button onClick={onClose} aria-label="Close photo"><X size={22} /></button></div></div><div className="lightbox-image"><button onClick={() => step(-1)} aria-label="Previous photo"><ArrowLeft size={24} /></button><img src={selected} alt={`Gallery photograph ${Math.max(0, index) + 1}`} crossOrigin="anonymous" draggable={false} /><button onClick={() => step(1)} aria-label="Next photo"><ArrowRight size={24} /></button></div><p>Use ← → to browse · Esc to close</p></dialog>, document.body)
 }
 const Gallery = () => {
   const [category, setCategory] = useState<'all' | 'favorites'>('all')
@@ -28,7 +29,8 @@ const Gallery = () => {
   const [selected, setSelected] = useState<string | null>(null)
   const [status, setStatus] = useState('')
   const [uploading, setUploading] = useState(false)
-  const { galleryImages, setGalleryImages, addGalleryImage, wallpaper, setWallpaper } = useSystemStore()
+  const [removed, setRemoved] = useState<{ src: string; index: number } | null>(null)
+  const { galleryImages, setGalleryImages, addGalleryImage, wallpaper, clearWallpaper } = useSystemStore()
   const fileInput = useRef<HTMLInputElement>(null)
   const abort = useRef<AbortController | null>(null)
   useEffect(() => () => abort.current?.abort(), [])
@@ -39,15 +41,18 @@ const Gallery = () => {
   }
   const remove = (src: string) => {
     if (!window.confirm('Remove this photo from your gallery on this device? The original cloud image will remain.')) return
+    const index = galleryImages.indexOf(src)
     setGalleryImages(galleryImages.filter(item => item !== src))
+    setRemoved({ src, index })
     const next = favorites.filter(item => item !== src)
     setFavorites(next); safeSave('gallery_favorites', JSON.stringify(next))
-    if (wallpaper === src) setWallpaper('/images/wallpaper.png')
-    setStatus('Photo removed from this device’s gallery.')
+    if (wallpaper === src) clearWallpaper()
+    setStatus('Photo removed from this device’s gallery. You can undo this action.')
   }
   const reset = () => {
-    if (!window.confirm('Restore the original collection and clear favorites on this device? Cloud uploads will remain in Cloudinary.')) return
-    setGalleryImages(initialImages); setFavorites([]); safeSave('gallery_favorites', '[]'); setWallpaper('/images/wallpaper.png'); setStatus('Original collection restored.')
+    const missing = initialImages.filter(src => !galleryImages.includes(src))
+    if (!missing.length) { setStatus('The original collection is already complete.'); return }
+    setGalleryImages([...galleryImages, ...missing]); setStatus(`${missing.length} original ${missing.length === 1 ? 'photo' : 'photos'} restored. Favorites and your wallpaper were not changed.`)
   }
   const upload = async (file?: File) => {
     if (!file || !canUpload || uploading) return
@@ -66,6 +71,7 @@ const Gallery = () => {
     finally { clearTimeout(timeout); setUploading(false); if (fileInput.current) fileInput.current.value = '' }
   }
   const images = category === 'all' ? galleryImages : galleryImages.filter(src => favorites.includes(src))
-  return <div className="gallery-app"><div className="window-header gallery-toolbar"><WindowControls target="photos" /><span>Photos</span><div><input ref={fileInput} type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => void upload(event.target.files?.[0])} />{canUpload && <button disabled={uploading} onClick={() => fileInput.current?.click()} aria-label="Upload photo" title="Upload photo"><Upload size={18} /></button>}<button onClick={reset} aria-label="Reset gallery" title="Reset gallery"><RotateCcw size={18} /></button></div></div><div className="gallery-tabs" aria-label="Photo collections"><button aria-pressed={category === 'all'} onClick={() => setCategory('all')}><ImageIcon size={16} />All photos<span>{galleryImages.length}</span></button><button aria-pressed={category === 'favorites'} onClick={() => setCategory('favorites')}><Heart size={16} />Favorites</button></div>{status && <p className="gallery-status" role="status">{status}</p>}<div className="gallery-scroll">{images.length ? <div className="photo-grid">{images.map((src, index) => <div key={src} className="photo-tile"><button className="photo-open" onClick={() => setSelected(src)} aria-label={`Open photo ${index + 1}`}><img src={src} alt={`Gallery photograph ${index + 1}`} loading="lazy" decoding="async" crossOrigin="anonymous" /></button><div className="photo-actions"><button aria-label={favorites.includes(src) ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorites.includes(src)} onClick={() => favorite(src)}><Heart size={16} fill={favorites.includes(src) ? 'currentColor' : 'none'} /></button><button aria-label="Remove photo from this device" onClick={() => remove(src)}><Trash2 size={16} /></button></div></div>)}</div> : <p className="empty-state">{category === 'favorites' ? 'No favorites yet. Tap the heart on a photo to save it here.' : 'Your collection is empty. Restore the original gallery to start exploring.'}</p>}</div>{selected && <Lightbox images={images} initial={selected} favorites={favorites} onFavorite={favorite} onClose={() => setSelected(null)} />}</div>
+  const undo = () => { if (!removed) return; const next = [...galleryImages]; next.splice(Math.max(0, removed.index), 0, removed.src); setGalleryImages(next); setRemoved(null); setStatus('Photo restored.') }
+  return <div className="gallery-app"><div className="window-header gallery-toolbar"><WindowControls target="photos" /><span>Photos</span><div data-window-no-drag><input ref={fileInput} type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => void upload(event.target.files?.[0])} />{canUpload && <button disabled={uploading} onClick={() => fileInput.current?.click()} aria-label="Upload photo" title="Upload photo"><Upload size={18} /></button>}<button onClick={reset} aria-label="Restore original photos" title="Restore original photos"><RotateCcw size={18} /></button></div></div><div className="gallery-tabs" aria-label="Photo collections"><button aria-pressed={category === 'all'} onClick={() => setCategory('all')}><ImageIcon size={16} />All photos<span>{galleryImages.length}</span></button><button aria-pressed={category === 'favorites'} onClick={() => setCategory('favorites')}><Heart size={16} />Favorites</button></div>{status && <p className="gallery-status" role="status">{status}{removed && <button onClick={undo}>Undo</button>}</p>}<div className="gallery-scroll">{images.length ? <div className="photo-grid">{images.map((src, index) => <div key={src} className="photo-tile"><button className="photo-open" onClick={() => setSelected(src)} aria-label={`Open photo ${index + 1}`}><img src={src} alt={`Gallery photograph ${index + 1}`} loading="lazy" decoding="async" crossOrigin="anonymous" draggable={false} /></button><div className="photo-actions"><button aria-label={favorites.includes(src) ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorites.includes(src)} onClick={() => favorite(src)}><Heart size={16} fill={favorites.includes(src) ? 'currentColor' : 'none'} /></button><button aria-label="Remove photo from this device" onClick={() => remove(src)}><Trash2 size={16} /></button></div></div>)}</div> : <p className="empty-state">{category === 'favorites' ? 'No favorites yet. Tap the heart on a photo to save it here.' : 'Your collection is empty. Restore the original gallery to start exploring.'}</p>}</div>{selected && <Lightbox images={images} initial={selected} favorites={favorites} onFavorite={favorite} onClose={() => setSelected(null)} />}</div>
 }
 export default WindowWrapper(Gallery, 'photos')

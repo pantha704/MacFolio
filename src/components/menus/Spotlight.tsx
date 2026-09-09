@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useWindowStore } from '#store/useWindowStore'
 import { projects } from '../../data/portfolio'
+import { searchableApps } from '../../desktop/appRegistry'
 
 const Spotlight = ({ onClose }: { onClose: () => void }) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -11,15 +12,9 @@ const Spotlight = ({ onClose }: { onClose: () => void }) => {
   const [selected, setSelected] = useState(0)
   const open = useWindowStore(state => state.openWindow)
   const items = [
-    { title: 'Settings', detail: 'Wallpaper and appearance', action: () => open('settings') },
-    { title: 'Arcade', detail: 'Pinball, paddle ball and racing', action: () => open('arcade') },
+    ...searchableApps.map(app => ({ title: app.name, detail: app.description, action: () => open(app.id) })),
     { title: 'All projects', detail: 'Explore my work', action: () => open('finder', { activeSide: 'work' }) },
     { title: 'About me', detail: 'Background and skills', action: () => open('finder', { activeSide: 'about' }) },
-    { title: 'Contact', detail: 'Email and social links', action: () => open('contact') },
-    { title: 'Résumé', detail: 'View or download PDF', action: () => open('resume') },
-    { title: 'Gallery', detail: 'Photos and wallpapers', action: () => open('photos') },
-    { title: 'Terminal', detail: 'Interactive shell', action: () => open('terminal') },
-    { title: 'Safari', detail: 'Browse and explore GitHub', action: () => open('safari') },
     ...projects.map(project => ({ title: project.name, detail: project.category, action: () => open('finder', { projectId: project.id }) })),
   ].filter(item => `${item.title} ${item.detail}`.toLowerCase().includes(query.trim().toLowerCase()))
   useEffect(() => {
@@ -33,7 +28,7 @@ const Spotlight = ({ onClose }: { onClose: () => void }) => {
   return createPortal(
     <dialog ref={dialogRef} className="spotlight" aria-label="Search portfolio" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
       <div className="spotlight-input"><Search size={22} /><input ref={inputRef} aria-label="Search apps and projects" role="combobox" aria-expanded="true" aria-controls="spotlight-results" aria-autocomplete="list" aria-activedescendant={items.length ? `spotlight-${selected}` : undefined} value={query} placeholder="Search projects, apps, anything…" onChange={event => { setQuery(event.target.value); setSelected(0) }} onKeyDown={event => {
-        if (event.key === 'ArrowDown') { event.preventDefault(); setSelected(index => Math.min(index + 1, items.length - 1)) }
+        if (event.key === 'ArrowDown') { event.preventDefault(); setSelected(index => items.length ? Math.min(index + 1, items.length - 1) : 0) }
         if (event.key === 'ArrowUp') { event.preventDefault(); setSelected(index => Math.max(0, index - 1)) }
         if (event.key === 'Enter') { event.preventDefault(); run(selected) }
       }} /><button aria-label="Close search" onClick={onClose}><X size={18} /></button></div>

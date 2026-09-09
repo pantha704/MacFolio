@@ -6,19 +6,25 @@ interface WindowItem {
     isMinimized: boolean;
     isMaximized: boolean;
     zIndex: number;
-    data: any;
+    data: unknown;
 }
 interface WindowState {
     windows: Record<WindowKey, WindowItem>;
+    order: WindowKey[];
+    focusedWindow: WindowKey | null;
     nextZIndex: number;
-    openWindow: (windowKey: WindowKey, data?: any) => void;
+    showDesktopSnapshot: WindowKey[];
+    openWindow: (windowKey: WindowKey, data?: unknown) => void;
     closeWindow: (windowKey: WindowKey) => void;
     minimizeWindow: (windowKey: WindowKey) => void;
     maximizeWindow: (windowKey: WindowKey) => void;
     restoreWindow: (windowKey: WindowKey) => void;
     focusWindow: (windowKey: WindowKey) => void;
+    activateWindow: (windowKey: WindowKey, data?: unknown) => void;
+    launchFromDock: (windowKey: WindowKey) => void;
+    toggleShowDesktop: () => void;
     toggleWindow: (windowKey: WindowKey) => void;
-    updateWindowData: (windowKey: WindowKey, data: any) => void;
+    updateWindowData: (windowKey: WindowKey, data: unknown) => void;
     updateWindowZIndex: (windowKey: WindowKey) => void;
 }
 export declare const useWindowStore: import("zustand").UseBoundStore<Omit<import("zustand").StoreApi<WindowState>, "setState"> & {

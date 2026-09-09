@@ -28,22 +28,15 @@ export const getStackFetchOutput = () => {
   const infoLines: string[] = [];
 
   // Header: User@Host
-  infoLines.push(`${BOLD}${GREEN}pantha704@macbook-pro${RESET}`);
+  infoLines.push(`${BOLD}${GREEN}pantha704@macfolio${RESET}`);
   infoLines.push("----------------");
 
-  // OS Info (Static for now)
-  infoLines.push(`${BOLD}${GREEN}OS${RESET}: macOS web container`);
-  infoLines.push(`${BOLD}${GREEN}Host${RESET}: MacFolio Pro (${new Date().getFullYear()})`);
-  infoLines.push(`${BOLD}${GREEN}Kernel${RESET}: v8 engine`);
-  const startDate = new Date('2025-11-25'); // Uptime starts from this date
-  const now = new Date();
-  const diffMs = now.getTime() - startDate.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  infoLines.push(`${BOLD}${GREEN}Uptime${RESET}: ${diffDays > 0 ? diffDays : 0} days`);
-  infoLines.push(`${BOLD}${GREEN}Shell${RESET}: jsh 1.0`);
-  infoLines.push(`${BOLD}${GREEN}Resolution${RESET}: 1920x1080`);
-  infoLines.push(`${BOLD}${GREEN}DE${RESET}: Vite-React`);
-  infoLines.push(`${BOLD}${GREEN}WM${RESET}: Zustand`);
+  infoLines.push(`${BOLD}${GREEN}Experience${RESET}: MacFolio`);
+  infoLines.push(`${BOLD}${GREEN}Runtime${RESET}: Node.js in this browser tab`);
+  infoLines.push(`${BOLD}${GREEN}Platform${RESET}: ${navigator.platform || 'web browser'}`);
+  infoLines.push(`${BOLD}${GREEN}Viewport${RESET}: ${window.innerWidth}×${window.innerHeight}`);
+  infoLines.push(`${BOLD}${GREEN}Session${RESET}: resets when this page closes`);
+  infoLines.push(`${BOLD}${GREEN}Shell${RESET}: jsh`);
   infoLines.push(""); // Spacer
 
   infoLines.push(`${BOLD}${GREEN}Tech Stack${RESET}`);

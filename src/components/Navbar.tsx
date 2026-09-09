@@ -10,6 +10,7 @@ const Navbar = () => {
   const isWifiEnabled = useSystemStore(state => state.isWifiEnabled)
   const toggleWifi = useSystemStore(state => state.toggleWifi)
   const openWindow = useWindowStore(state => state.openWindow)
+  const toggleShowDesktop = useWindowStore(state => state.toggleShowDesktop)
   useEffect(() => {
     const timer = window.setInterval(() => setTime(new Date()), 30_000)
     const onKey = (event: KeyboardEvent) => {
@@ -25,7 +26,7 @@ const Navbar = () => {
     <>
       <nav className="menubar" aria-label="Desktop menu">
         <div className="menu-left">
-          <button className="brand-button" onClick={() => { const s=useWindowStore.getState(); for(const key of Object.keys(s.windows) as (keyof typeof s.windows)[]) if(s.windows[key].isOpen) s.minimizeWindow(key) }} aria-label="Go to portfolio overview"><Monitor size={18} /><strong>MacFolio</strong></button>
+          <button className="brand-button" onClick={toggleShowDesktop} aria-label="Show or restore desktop"><Monitor size={18} /><strong>MacFolio</strong></button>
           <button className="menu-link" onClick={() => openWindow('finder', { activeSide: 'work' })}>Work</button>
           <button className="menu-link" onClick={() => openWindow('finder', { activeSide: 'about' })}>About</button>
           <button className="menu-link" onClick={() => openWindow('resume')}>Résumé</button>

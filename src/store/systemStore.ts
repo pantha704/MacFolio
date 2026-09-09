@@ -10,6 +10,7 @@ interface SystemState {
   setWifi: (enabled: boolean) => void
   wallpaper: string
   setWallpaper: (url: string) => void
+  clearWallpaper: () => void
   galleryImages: string[]
   setGalleryImages: (images: string[]) => void
   addGalleryImage: (url: string) => void
@@ -22,7 +23,8 @@ export const useSystemStore = create<SystemState>()(
       toggleWifi: () => set((state) => ({ isWifiEnabled: !state.isWifiEnabled })),
       setWifi: (enabled) => set({ isWifiEnabled: enabled }),
       wallpaper: '/images/wallpaper.png',
-      setWallpaper: (url) => { set({ wallpaper: url }); useAppearance.getState().update({ mode: 'photo' }) },
+      setWallpaper: (url) => { set({ wallpaper: url }); useAppearance.getState().update({ scene: 'photo' }) },
+      clearWallpaper: () => { set({ wallpaper: '/images/wallpaper.png' }); useAppearance.getState().update({ scene: 'landscape' }) },
       galleryImages: initialImages,
       setGalleryImages: (images) => set({ galleryImages: [...new Set(images)] }),
       addGalleryImage: (url) => set((state) => ({ galleryImages: [...new Set([url, ...state.galleryImages])] })),
