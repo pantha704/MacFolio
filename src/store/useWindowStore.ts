@@ -1,167 +1,157 @@
-import { create } from "zustand";
-import { INITIAL_Z_INDEX, WINDOW_CONFIG } from "#constants";
-import { immer } from "zustand/middleware/immer";
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { INITIAL_Z_INDEX, WINDOW_CONFIG } from '#constants'
 
-type WindowConfigType = typeof WINDOW_CONFIG;
-export type WindowKey = keyof WindowConfigType;
+type WindowConfigType = typeof WINDOW_CONFIG
+export type WindowKey = keyof WindowConfigType
 
-interface WindowItem {
-  isOpen: boolean;
-  isMinimized: boolean;
-  isMaximized: boolean;
-  zIndex: number;
-  data: any;
+export type WindowItem = {
+  isOpen: boolean
+  isMinimized: boolean
+  isMaximized: boolean
+  zIndex: number
+  data: unknown
 }
 
-interface WindowState {
-  windows: Record<WindowKey, WindowItem>;
-  nextZIndex: number;
-  openWindow: (windowKey: WindowKey, data?: any) => void;
-  closeWindow: (windowKey: WindowKey) => void;
-  minimizeWindow: (windowKey: WindowKey) => void;
-  maximizeWindow: (windowKey: WindowKey) => void;
-  restoreWindow: (windowKey: WindowKey) => void;
-  focusWindow: (windowKey: WindowKey) => void;
-  toggleWindow: (windowKey: WindowKey) => void;
-  updateWindowData: (windowKey: WindowKey, data: any) => void;
-  updateWindowZIndex: (windowKey: WindowKey) => void;
+type WindowState = {
+  windows: Record<WindowKey, WindowItem>
+  order: WindowKey[]
+  focusedWindow: WindowKey | null
+  nextZIndex: number
+  showDesktopSnapshot: WindowKey[]
+  openWindow: (key: WindowKey, data?: unknown) => void
+  closeWindow: (key: WindowKey) => void
+  minimizeWindow: (key: WindowKey) => void
+  maximizeWindow: (key: WindowKey) => void
+  restoreWindow: (key: WindowKey) => void
+  focusWindow: (key: WindowKey) => void
+  activateWindow: (key: WindowKey, data?: unknown) => void
+  launchFromDock: (key: WindowKey) => void
+  toggleShowDesktop: () => void
+  toggleWindow: (key: WindowKey) => void
+  updateWindowData: (key: WindowKey, data: unknown) => void
+  updateWindowZIndex: (key: WindowKey) => void
 }
 
-export const useWindowStore = create<WindowState>()(
-  immer((set) => ({
-    windows: Object.entries(WINDOW_CONFIG).reduce((acc, [key, config]) => {
-      acc[key as WindowKey] = {
-        ...config,
-        isOpen: config.isOpen ?? false,
-        isMinimized: false,
-        isMaximized: false,
-        zIndex: config.zIndex ?? INITIAL_Z_INDEX,
-        data: config.data ?? null,
-      };
-      return acc;
-    }, {} as Record<WindowKey, WindowItem>),
-    nextZIndex: INITIAL_Z_INDEX + 1,
+const initialWindows = Object.entries(WINDOW_CONFIG).reduce((all, [key, config]) => {
+  all[key as WindowKey] = {
+    ...config,
+    isOpen: config.isOpen ?? false,
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: config.zIndex ?? INITIAL_Z_INDEX,
+    data: config.data ?? null,
+  }
+  return all
+}, {} as Record<WindowKey, WindowItem>)
 
-    openWindow: (windowKey: WindowKey, data: any = null) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.isOpen = true;
-          win.isMinimized = false;
-          win.data = data ?? win.data;
-          win.zIndex = state.nextZIndex;
-          state.nextZIndex++;
-        }
-      }),
+function normalize(state: WindowState) {
+  state.order = state.order.filter((key, index, keys) => state.windows[key].isOpen && keys.indexOf(key) === index)
+  state.order.forEach((key, index) => { state.windows[key].zIndex = INITIAL_Z_INDEX + index + 1 })
+  state.nextZIndex = INITIAL_Z_INDEX + state.order.length + 1
+  if (state.focusedWindow && (!state.windows[state.focusedWindow].isOpen || state.windows[state.focusedWindow].isMinimized)) state.focusedWindow = null
+  if (!state.focusedWindow) state.focusedWindow = [...state.order].reverse().find(key => !state.windows[key].isMinimized) ?? null
+}
 
-    closeWindow: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.isOpen = false;
-          win.isMinimized = false;
-          win.isMaximized = false;
-          win.data = null;
-          win.zIndex = INITIAL_Z_INDEX;
-        }
-      }),
+function bringToFront(state: WindowState, key: WindowKey) {
+  state.order = state.order.filter(item => item !== key)
+  state.order.push(key)
+  state.focusedWindow = key
+  state.showDesktopSnapshot = []
+  normalize(state)
+}
 
-    minimizeWindow: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.isMinimized = true;
-        }
-      }),
-
-    maximizeWindow: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.isMaximized = !win.isMaximized;
-          win.zIndex = state.nextZIndex;
-          state.nextZIndex++;
-        }
-      }),
-
-    restoreWindow: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.isMinimized = false;
-          win.zIndex = state.nextZIndex;
-          state.nextZIndex++;
-        }
-      }),
-
-    focusWindow: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          if (win.isMinimized) win.isMinimized = false;
-          win.zIndex = state.nextZIndex;
-          state.nextZIndex++;
-        }
-      }),
-
-    toggleWindow: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          if (win.isOpen && !win.isMinimized) {
-             // If open and visible, check if it's the top-most window
-             // logic handled in Dock.tsx usually, but here basic toggle:
-             // For now, keep basic toggle logic or update to match desired behavior?
-             // The user asked for specific Dock behavior:
-             // "click again on it, that would only minimize the app"
-             // "if i press the 3rd time it will open from where it left"
-
-             // We'll leave this basic toggle as "Open/Close" for now,
-             // and implement the sophisticated logic in Dock.tsx using the new actions.
-             // Actually, let's make this toggle smart:
-             // If minimized -> Restore
-             // If Open -> Close (default behavior) - BUT user wants Minimize.
-             // Let's keep this simple and handle the complex logic in Dock.tsx
-
-             const opening = !win.isOpen;
-             win.isOpen = opening;
-             if (opening) {
-                win.zIndex = state.nextZIndex;
-                state.nextZIndex++;
-                win.isMinimized = false;
-             } else {
-                win.zIndex = INITIAL_Z_INDEX;
-                win.data = null;
-                win.isMinimized = false;
-                win.isMaximized = false;
-             }
-          } else if (win.isMinimized) {
-             win.isMinimized = false;
-             win.zIndex = state.nextZIndex;
-             state.nextZIndex++;
-          } else {
-             win.isOpen = true;
-             win.zIndex = state.nextZIndex;
-             state.nextZIndex++;
-          }
-        }
-      }),
-
-    updateWindowData: (windowKey: WindowKey, data) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.data = data;
-        }
-      }),
-
-    updateWindowZIndex: (windowKey: WindowKey) =>
-      set((state) => {
-        const win = state.windows[windowKey];
-        if (win) {
-          win.zIndex = state.nextZIndex;
-          state.nextZIndex++;
-        }
-      }),
-  }))
-);
+export const useWindowStore = create<WindowState>()(immer(set => ({
+  windows: initialWindows,
+  order: [],
+  focusedWindow: null,
+  nextZIndex: INITIAL_Z_INDEX + 1,
+  showDesktopSnapshot: [],
+  openWindow: (key, data) => set(state => {
+    const win = state.windows[key]
+    win.isOpen = true
+    win.isMinimized = false
+    if (data !== undefined) win.data = data
+    bringToFront(state, key)
+  }),
+  closeWindow: key => set(state => {
+    const win = state.windows[key]
+    Object.assign(win, { isOpen: false, isMinimized: false, isMaximized: false, zIndex: INITIAL_Z_INDEX, data: null })
+    state.order = state.order.filter(item => item !== key)
+    if (state.focusedWindow === key) state.focusedWindow = null
+    normalize(state)
+  }),
+  minimizeWindow: key => set(state => {
+    const win = state.windows[key]
+    if (!win.isOpen) return
+    win.isMinimized = true
+    if (state.focusedWindow === key) state.focusedWindow = null
+    normalize(state)
+  }),
+  maximizeWindow: key => set(state => {
+    const win = state.windows[key]
+    if (!win.isOpen) return
+    win.isMaximized = !win.isMaximized
+    win.isMinimized = false
+    bringToFront(state, key)
+  }),
+  restoreWindow: key => set(state => {
+    const win = state.windows[key]
+    win.isOpen = true
+    win.isMinimized = false
+    bringToFront(state, key)
+  }),
+  focusWindow: key => set(state => {
+    const win = state.windows[key]
+    if (!win.isOpen) return
+    win.isMinimized = false
+    bringToFront(state, key)
+  }),
+  activateWindow: (key, data) => set(state => {
+    const win = state.windows[key]
+    win.isOpen = true
+    win.isMinimized = false
+    if (data !== undefined) win.data = data
+    bringToFront(state, key)
+  }),
+  launchFromDock: key => set(state => {
+    const win = state.windows[key]
+    if (!win.isOpen || win.isMinimized || state.focusedWindow !== key) {
+      win.isOpen = true
+      win.isMinimized = false
+      bringToFront(state, key)
+      return
+    }
+    win.isMinimized = true
+    state.focusedWindow = null
+    normalize(state)
+  }),
+  toggleShowDesktop: () => set(state => {
+    const visible = state.order.filter(key => state.windows[key].isOpen && !state.windows[key].isMinimized)
+    if (visible.length) {
+      state.showDesktopSnapshot = visible
+      visible.forEach(key => { state.windows[key].isMinimized = true })
+      state.focusedWindow = null
+    } else if (state.showDesktopSnapshot.length) {
+      const snapshot = state.showDesktopSnapshot.filter(key => state.windows[key].isOpen)
+      snapshot.forEach(key => { state.windows[key].isMinimized = false })
+      state.focusedWindow = snapshot.at(-1) ?? null
+      state.showDesktopSnapshot = []
+    }
+    normalize(state)
+  }),
+  toggleWindow: key => set(state => {
+    const win = state.windows[key]
+    if (win.isOpen && !win.isMinimized && state.focusedWindow === key) {
+      win.isMinimized = true
+      state.focusedWindow = null
+      normalize(state)
+      return
+    }
+    win.isOpen = true
+    win.isMinimized = false
+    bringToFront(state, key)
+  }),
+  updateWindowData: (key, data) => set(state => { state.windows[key].data = data }),
+  updateWindowZIndex: key => set(state => { if (state.windows[key].isOpen) bringToFront(state, key) }),
+})))

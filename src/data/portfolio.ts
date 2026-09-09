@@ -19,4 +19,4 @@ export const projects = [
   { name: 'NimRoute', repo: 'nimroute', category: 'Developer tools', description: 'An OpenAI-compatible routing service with tenant keys, metered billing and usage tracking.', tags: ['TypeScript', 'LLM routing'] },
   { name: 'Threadline', repo: 'threadline', category: 'Product concept', description: 'A conversation intelligence product concept and landing page.', tags: ['HTML', 'Design'] },
   { name: 'Leave Tracker', repo: 'aa-leave-tracker', category: 'Workplace tools', description: 'An internal leave and PTO tracking application. Public source code is available below.', tags: ['TypeScript'] },
-].map((p, i) => ({ ...p, id: 100 + i, links: [{ label: 'View source', href: `https://github.com/pantha704/${p.repo}` }] }))
+].map(p => ({ ...p, id: p.repo.toLowerCase(), links: [{ label: 'View source', href: `https://github.com/pantha704/${p.repo}` }] }))

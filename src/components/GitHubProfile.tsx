@@ -45,7 +45,7 @@ const GitHubProfile = ({ username }: { username: string }) => {
         if (!reposRes.ok) throw new Error('Repos not found')
         const reposData = await reposRes.json()
         setRepos(reposData)
-      } catch (err) {
+      } catch {
         setError('Failed to load GitHub profile')
       } finally {
         setLoading(false)
