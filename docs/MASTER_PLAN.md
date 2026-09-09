@@ -1,5 +1,7 @@
 # MacFolio: a living personal desktop
 
+> Historical roadmap. See [IMPLEMENTATION_BLUEPRINT.md](./IMPLEMENTATION_BLUEPRINT.md) for the current source audit, requirement contracts, and release gates. In particular, the old recommendation below for a default simulated portfolio Terminal is superseded: the real Node shell remains the default.
+
 Status: implementation roadmap, not a claim that the planned features already exist.
 Prepared 2026-09-08. Baseline: master c9ccf24 and upgrade PR #3 at 7af0e3a. Continue on codex/macfolio-upgrade as requested. The current PR is an interim foundation; its landing-style introduction is not the final desktop direction.
 
