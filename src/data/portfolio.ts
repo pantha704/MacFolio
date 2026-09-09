@@ -1,5 +1,3 @@
-import { locations } from '#constants'
-
 // Public portfolio identity, preserved from the original repository.
 export const profile = {
   name: 'Pratham Jaiswal',
@@ -13,18 +11,12 @@ export const profile = {
   resume: '/files/resume.pdf',
 }
 
-const details: Record<string, { category: string; description: string; tags: string[] }> = {
-  MacFolio: { category: 'Web experience', description: 'A personal desktop on the web. Explore projects, browse photos, and open a real terminal.', tags: ['React', 'TypeScript', 'GSAP'] },
-  Solverse: { category: 'Solana', description: 'Explore my Solverse project, its live experience, and the code behind it.', tags: ['Web3', 'Solana'] },
-  'Solana Starter Kit': { category: 'Developer tools', description: 'A starting point for building on Solana. Browse the live project or explore the source.', tags: ['Solana', 'Developer tools'] },
-  'Anchor AMM': { category: 'Solana', description: 'An automated market maker project built with Anchor. Explore the implementation on GitHub.', tags: ['Rust', 'Anchor'] },
-  'Anchor Escrow': { category: 'Solana', description: 'An escrow project built with Anchor. Explore the program and its source code.', tags: ['Rust', 'Anchor'] },
-  Obsidian: { category: 'Open source', description: 'Explore the Obsidian repository and browse the implementation.', tags: ['Open source'] },
-}
-
-export const projects = locations.work.children.map(project => ({
-  id: project.id,
-  name: project.name,
-  ...details[project.name],
-  links: project.children.map(link => ({ label: link.name, href: link.href })),
-}))
+// Curated public repositories verified against GitHub on 2026-09-08.
+export const projects = [
+  { name: 'Homeworker', repo: 'home-worker', category: 'Document tools', description: 'Turn PDFs and images into reviewable A4 notes using licensed handwriting personas.', tags: ['Python', 'Documents'] },
+  { name: 'Auto Apply Jobs', repo: 'auto-apply-jobs', category: 'Automation', description: 'Multi-source application automation with a SQLite queue, session replication and profile-driven form filling.', tags: ['Python', 'Automation'] },
+  { name: 'MacFolio', repo: 'MacFolio', category: 'Web experience', description: 'An interactive portfolio desktop with adaptive scenery, photos and a little arcade.', tags: ['React', 'TypeScript'] },
+  { name: 'NimRoute', repo: 'nimroute', category: 'Developer tools', description: 'An OpenAI-compatible routing service with tenant keys, metered billing and usage tracking.', tags: ['TypeScript', 'LLM routing'] },
+  { name: 'Threadline', repo: 'threadline', category: 'Product concept', description: 'A conversation intelligence product concept and landing page.', tags: ['HTML', 'Design'] },
+  { name: 'Leave Tracker', repo: 'aa-leave-tracker', category: 'Workplace tools', description: 'An internal leave and PTO tracking application. Public source code is available below.', tags: ['TypeScript'] },
+].map((p, i) => ({ ...p, id: 100 + i, links: [{ label: 'View source', href: `https://github.com/pantha704/${p.repo}` }] }))

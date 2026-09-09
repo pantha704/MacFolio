@@ -1,3 +1,4 @@
+import { useAppearance } from './appearance'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { safeStorage } from '../utils/storage'
@@ -21,7 +22,7 @@ export const useSystemStore = create<SystemState>()(
       toggleWifi: () => set((state) => ({ isWifiEnabled: !state.isWifiEnabled })),
       setWifi: (enabled) => set({ isWifiEnabled: enabled }),
       wallpaper: '/images/wallpaper.png',
-      setWallpaper: (url) => set({ wallpaper: url }),
+      setWallpaper: (url) => { set({ wallpaper: url }); useAppearance.getState().update({ mode: 'photo' }) },
       galleryImages: initialImages,
       setGalleryImages: (images) => set({ galleryImages: [...new Set(images)] }),
       addGalleryImage: (url) => set((state) => ({ galleryImages: [...new Set([url, ...state.galleryImages])] })),

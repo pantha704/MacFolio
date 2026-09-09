@@ -1194,7 +1194,7 @@ body {
   align-items:center;
   gap:16px;
 }
-.safari-toolbar button,.gallery-toolbar>div>button {
+.safari-toolbar button,.gallery-toolbar>div:last-child>button {
   display:grid;
   place-items:center;
   min-width:32px;
@@ -1204,7 +1204,7 @@ body {
   color:#cad7ee;
   border-radius:5px;
 }
-.safari-toolbar button:hover,.gallery-toolbar>div>button:hover {
+.safari-toolbar button:hover,.gallery-toolbar>div:last-child>button:hover {
   background:#ffffff12;
 }
 .safari-history {
@@ -1487,3 +1487,34 @@ body {
     padding:0 6px;
   }
 }
+
+/* A viewport-sized desktop, with scrolling confined to document windows. */
+html,body,#root,.desktop-shell {width:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
+body {user-select:none;-webkit-user-select:none}
+input,textarea,[contenteditable=true],.command-terminal pre,.xterm {user-select:text;-webkit-user-select:text}
+.native-desktop {position:absolute;inset:48px 0 100px;padding:clamp(20px,5vw,80px);display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.desktop-greeting {max-width:65%}.desktop-greeting>span {font-size:10px;letter-spacing:.25em;color:#e2e7ff}
+.desktop-greeting h1 {font-size:clamp(30px,5.8vw,88px);line-height:1.05;letter-spacing:-.05em;margin:20px 0;text-shadow:0 2px 25px #1115}
+.desktop-greeting h1 em {display:block;font-family:Georgia,serif;font-weight:400}.desktop-greeting p {font-size:clamp(12px,1.4vw,18px);color:#e1e6ed}
+.desktop-greeting>button {margin-top:22px;background:#ffffffdc;border:0;border-radius:10px;padding:13px 20px;color:#19243a;font-weight:600}
+.desktop-shortcuts {display:grid;grid-template-columns:repeat(2,86px);gap:25px 16px}.desktop-shortcuts>button {border:0;background:none;color:white;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:12px;text-shadow:0 1px 5px #000}
+.desktop-app-icon {display:grid;place-items:center;width:58px;height:58px;border-radius:15px;background:linear-gradient(145deg,#7bd7ff,#277ed9);box-shadow:0 6px 16px #10253b44,inset 0 1px 1px #fff8;color:white;transition:transform .2s}
+.desktop-shortcuts button:hover .desktop-app-icon {transform:translateY(-4px)}.icon-terminal {background:linear-gradient(145deg,#34425a,#101724)}.icon-settings {background:linear-gradient(145deg,#d2d9e4,#65728a)}.icon-arcade {background:linear-gradient(145deg,#fa9bde,#7550cf)}.icon-photos {background:linear-gradient(145deg,#ffd37e,#f76ca2)}.desktop-hint {position:absolute;bottom:12px;left:5vw;font-size:11px;color:#ffffffb0}
+.ambient-wallpaper {position:absolute;inset:0;overflow:hidden;background:#182335}
+.ambient-wallpaper>img {width:100%;height:100%;object-fit:cover;transition:filter 3s;filter:brightness(.85)}
+.ambient-wallpaper.phase-dawn>img {filter:brightness(.7) sepia(.25) saturate(.8)}
+.ambient-wallpaper.phase-evening>img {filter:brightness(.65) sepia(.4) saturate(1.2)}
+.ambient-wallpaper.phase-night>img {filter:brightness(.3) saturate(.5)}
+.ambience-tint {position:absolute;inset:0;background:linear-gradient(100deg,#12264750,transparent);pointer-events:none}
+.phase-dawn .ambience-tint {background:linear-gradient(#ad74ab30,#edb08622)}.phase-evening .ambience-tint {background:linear-gradient(#764a6b44,#e1935022)}.phase-night .ambience-tint {background:#17295555}
+.season-winter .ambience-tint {box-shadow:inset 0 0 30vw #b3dafd33}.season-spring .ambience-tint {box-shadow:inset 0 0 30vw #78ad8922}.season-summer .ambience-tint {box-shadow:inset 0 0 30vw #fad78722}.season-autumn .ambience-tint {box-shadow:inset 0 0 30vw #d4936333}
+.has-motion>img {animation:photo-drift 30s ease-in-out infinite alternate}@keyframes photo-drift {from{transform:scale(1.02)}to{transform:scale(1.1) translate(1%,.5%)}}
+.phase-dawn {--sky1:#665985;--sky2:#f3b2a0}.phase-day {--sky1:#487fc1;--sky2:#bddded}.phase-evening {--sky1:#454777;--sky2:#f1a080}.phase-night {--sky1:#0c1530;--sky2:#354367}
+.settings-app,.arcade-app {height:100%;display:flex;flex-direction:column;background:#202530}.settings-content {padding:25px;overflow:auto}.settings-content h2 {font-size:24px}.settings-content p {color:#b2bccd;font-size:13px;line-height:1.7}.settings-content label {display:flex;align-items:center;gap:12px;margin:22px 0}.settings-content select {background:#313a4a;color:white;padding:8px;border-radius:6px}.scene-options {display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:12px;margin:24px 0}.scene-options button {background:#303847;color:white;border:1px solid #ffffff20;border-radius:9px;padding:8px}.scene-options button[aria-pressed=true] {border-color:#9fbadd;background:#40506a}.scene-swatch {display:block;height:50px;border-radius:5px;margin-bottom:9px;background:linear-gradient(var(--sky1,#6488b9),var(--sky2,#a9c7dc))}
+.photo-grid {display:block;columns:3 170px;column-gap:14px}.photo-tile {aspect-ratio:auto;break-inside:avoid;margin:0 0 14px;transform:rotate(-1deg)}.photo-tile:nth-child(3n) {transform:rotate(1.2deg)}.photo-open {display:block}.photo-open img {display:block;height:auto;min-height:110px}.photo-actions {opacity:0;transition:opacity .2s}.photo-tile:hover .photo-actions,.photo-tile:focus-within .photo-actions {opacity:1}
+.command-terminal {flex:1;min-height:0;overflow:auto;padding:22px;color:#c5f4d7;background:#10151b;font:14px/1.65 ui-monospace,monospace}.command-terminal pre {white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:0 0 9px}.command-terminal form {display:flex;gap:10px}.command-terminal input {flex:1;min-width:0;background:transparent;border:0;color:white;font:inherit}.command-terminal button,.shell-switch {background:#354254;border:0;color:#d9e8f9;border-radius:5px;padding:4px 10px}.shell-switch {margin-left:auto;font-size:12px}
+.arcade-toolbar,.arcade-controls {display:flex;gap:8px;justify-content:center;padding:10px;flex-wrap:wrap}.arcade-toolbar button,.arcade-controls button {background:#354158;border:0;color:white;padding:7px 12px;border-radius:7px}.arcade-toolbar button[aria-pressed=true] {background:#6a507c}.arcade-toolbar span {font-size:12px;align-self:center}.arcade-stage {flex:1;min-height:0;display:flex;justify-content:center;overflow:hidden}.arcade-stage canvas {height:100%;max-width:100%;object-fit:contain;aspect-ratio:1}.arcade-caption {font-size:11px;color:#b7c2d5;text-align:center;margin:0;padding:0 12px 8px}.arcade-controls {touch-action:none}
+@media(max-width:600px){.native-desktop{flex-direction:column;justify-content:center;gap:25px;padding:16px}.desktop-greeting{max-width:100%;text-align:center}.desktop-greeting h1{margin:12px 0}.desktop-greeting p{display:none}.desktop-greeting>button{margin-top:4px}.desktop-shortcuts{grid-template-columns:repeat(3,76px);gap:16px}.desktop-app-icon{width:46px;height:46px;border-radius:12px}.desktop-hint{display:none}.photo-actions{opacity:1}.arcade-toolbar{padding:5px;gap:4px}.arcade-toolbar button{font-size:11px;padding:5px}.settings-content{padding:16px}}
+@media(max-height:550px){.native-desktop{flex-direction:row;gap:10px}.desktop-greeting h1{font-size:30px}.desktop-greeting>span,.desktop-hint{display:none}.desktop-shortcuts{gap:10px;grid-template-columns:repeat(3,65px)}.desktop-app-icon{width:40px;height:40px}.desktop-greeting p{display:none}}
+@media(prefers-reduced-motion:reduce){.has-motion>img{animation:none}}
+.desktop-shortcuts {background:transparent;backdrop-filter:none;border:0;padding:0;position:static;width:auto}

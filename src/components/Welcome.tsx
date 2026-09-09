@@ -1,43 +1,12 @@
-import { ArrowUpRight, Command, FolderOpen, Mail } from 'lucide-react'
-import { useWindowStore } from '#store/useWindowStore'
-import { profile, projects } from '../data/portfolio'
-
-const Welcome = () => {
-  const openWindow = useWindowStore(state => state.openWindow)
-  return (
-    <section className="desktop-content" id="portfolio" tabIndex={-1} aria-label="Portfolio overview">
-      <div className="desktop-heading"><span>PERSONAL SPACE / {profile.firstName.toUpperCase()}</span><span>DESIGNED TO BE EXPLORED</span></div>
-      <div className="desktop-intro">
-        <div className="intro-copy">
-          <p className="eyebrow">Developer. Builder. Curious by default.</p>
-          <h1>Hi, I’m {profile.firstName}.<br /><em>Make yourself at home.</em></h1>
-          <p className="intro-description">I build for the web and Solana. This is my little corner of the internet—part portfolio, part playground.</p>
-          <div className="hero-actions">
-            <button className="primary-action" onClick={() => openWindow('finder', { activeSide: 'work' })}><FolderOpen size={18} /> Explore my work</button>
-            <button className="secondary-action" onClick={() => openWindow('contact')}><Mail size={18} /> Let’s talk</button>
-          </div>
-          <div className="intro-stack"><span>React</span><span>TypeScript</span><span>Rust</span><span>Solana</span></div>
-        </div>
-        <aside className="desktop-note" aria-label="About this space">
-          <div className="note-header"><span className="note-mark">⌘</span><span>A NOTE FROM ME</span></div>
-          <p>Good software should<br />feel <em>second nature.</em></p>
-          <span className="note-description">That’s what I’m working toward.<br />One project at a time.</span>
-          <button onClick={() => openWindow('finder', { activeSide: 'about' })}>A little about me <ArrowUpRight size={17} /></button>
-        </aside>
-      </div>
-      <div className="work-heading"><h2>Selected work</h2><button onClick={() => openWindow('finder', { activeSide: 'work' })}>All {projects.length} projects <ArrowUpRight size={16} /></button></div>
-      <div className="project-shortcuts">
-        {projects.slice(0, 3).map((project, index) => (
-          <button key={project.id} className="project-shortcut" onClick={() => openWindow('finder', { projectId: project.id })}>
-            <span className="project-number">0{index + 1}</span>
-            <img src="/images/folder.png" alt="" width={68} height={68} />
-            <span className="project-shortcut-copy"><strong>{project.name}</strong><span>{project.category}</span></span>
-            <ArrowUpRight size={20} className="project-arrow" />
-          </button>
-        ))}
-      </div>
-      <footer className="desktop-footer"><span>Built with curiosity. Based in {profile.location}.</span><span><Command size={14} /> K to find your way · Alt W to close a window</span></footer>
-    </section>
-  )
+import { FolderOpen, Image, Terminal, Settings, Gamepad2, Mail } from 'lucide-react'
+import { useWindowStore, type WindowKey } from '#store/useWindowStore'
+import { profile } from '../data/portfolio'
+const shortcuts = [ ['finder', 'My work', FolderOpen], ['photos', 'Photos', Image], ['terminal', 'Terminal', Terminal], ['settings', 'Settings', Settings], ['arcade', 'Arcade', Gamepad2], ['contact', 'Contact', Mail] ] as const
+export default function Welcome() {
+  const open = useWindowStore(s => s.openWindow)
+  return <section className="native-desktop" id="portfolio" aria-label="Desktop">
+    <div className="desktop-greeting"><span>WELCOME TO MY LITTLE CORNER</span><h1>{profile.firstName}’s<em>desktop.</em></h1><p>Builder, explorer, occasional high-score chaser.</p><button onClick={() => open('finder')}>Explore my work ↗</button></div>
+    <nav className="desktop-shortcuts" aria-label="Desktop apps">{shortcuts.map(([key, name, Icon]) => <button key={key} onClick={() => open(key as WindowKey)}><span className={`desktop-app-icon icon-${key}`}><Icon size={30}/></span><span>{name}</span></button>)}</nav>
+    <div className="desktop-hint">⌘ / Ctrl K to search · Alt W to close</div>
+  </section>
 }
-export default Welcome

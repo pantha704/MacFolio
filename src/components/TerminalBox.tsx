@@ -28,18 +28,20 @@ const Shell = () => {
     observer.observe(host.current)
     const frame = requestAnimationFrame(fitToHost)
     term.write(getStackFetchOutput())
+    const startupTimer = setTimeout(() => { if (!disposed) { disposed = true; setFailed(true) } }, 15000)
     void (async () => {
       try {
         const shell = await instance.spawn('jsh', { terminal: { cols: term.cols, rows: term.rows } })
+        clearTimeout(startupTimer)
         if (disposed) { shell.kill(); return }
         process = shell
         writer = shell.input.getWriter()
         inputSubscription = term.onData(data => { void writer?.write(data).catch(() => { if (!disposed) setFailed(true) }) })
         void shell.output.pipeTo(new WritableStream({ write(data) { if (!disposed) term.write(data) } }), { signal: outputAbort.signal }).catch(() => { if (!disposed) setFailed(true) })
         void shell.exit.then(() => { if (!disposed) useWindowStore.getState().closeWindow('terminal') })
-      } catch { if (!disposed) setFailed(true) }
+      } catch { clearTimeout(startupTimer); if (!disposed) setFailed(true) }
     })()
-    return () => { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); inputSubscription?.dispose(); outputAbort.abort(); process?.kill(); writer?.releaseLock(); term.dispose() }
+    return () => { clearTimeout(startupTimer); disposed = true; cancelAnimationFrame(frame); observer.disconnect(); inputSubscription?.dispose(); outputAbort.abort(); process?.kill(); writer?.releaseLock(); term.dispose() }
   }, [instance])
   return <div className="relative h-full"><div ref={host} className="h-full w-full" />{failed && <div className="terminal-fallback absolute inset-0 bg-[#1e1e1e]" role="alert"><h2>The shell stopped responding.</h2><p>Close Terminal and reopen it to try again.</p><a href={profile.github} target="_blank" rel="noopener noreferrer">Explore my code on GitHub</a></div>}</div>
 }
