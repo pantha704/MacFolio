@@ -3,7 +3,6 @@ import Navbar from './components/Navbar'
 import Welcome from './components/Welcome'
 import Dock from './components/Dock'
 import DynamicWallpaper from './components/DynamicWallpaper'
-import NoInternet from './components/NoInternet'
 import { useSystemStore } from './store/systemStore'
 import { useWindowStore, type WindowKey } from './store/useWindowStore'
 import { WindowErrorBoundary } from './components/WindowErrorBoundary'
@@ -19,7 +18,7 @@ const Arcade = lazy(() => import('./windows/Arcade'))
 const apps = { settings: Settings, arcade: Arcade, safari: Safari, finder: Finder, photos: Gallery, contact: Contact, terminal: Terminal }
 
 const App = () => {
-  const { isWifiEnabled, setGalleryImages } = useSystemStore()
+  const setGalleryImages = useSystemStore(s=>s.setGalleryImages)
   const windows = useWindowStore(state => state.windows)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -47,7 +46,7 @@ const App = () => {
       <a className="skip-link" href="#portfolio">Skip to portfolio</a>
       <DynamicWallpaper />
       <Navbar />
-      {isWifiEnabled ? <Welcome /> : <NoInternet />}
+      <Welcome />
       <Dock />
       {Object.entries(apps).map(([key, AppWindow]) => windows[key as WindowKey].isOpen && <WindowErrorBoundary key={key} windowKey={key as WindowKey}><Suspense fallback={<div role="status" className="app-loading">Opening {key}…</div>}><AppWindow /></Suspense></WindowErrorBoundary>)}
       {(['resume', 'txtfile', 'imgfile'] as const).map(key => windows[key].isOpen && <WindowErrorBoundary key={key} windowKey={key}><Suspense fallback={<div role="status" className="app-loading">Opening file…</div>}><FilePreview target={key} /></Suspense></WindowErrorBoundary>)}

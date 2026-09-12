@@ -24,7 +24,7 @@ export const useSystemStore = create<SystemState>()(
       setWifi: (enabled) => set({ isWifiEnabled: enabled }),
       wallpaper: '/images/wallpaper.png',
       setWallpaper: (url) => { set({ wallpaper: url }); useAppearance.getState().update({ scene: 'photo' }) },
-      clearWallpaper: () => { set({ wallpaper: '/images/wallpaper.png' }); useAppearance.getState().update({ scene: 'landscape' }) },
+      clearWallpaper: () => { set({ wallpaper: '/images/wallpaper.png' }); useAppearance.getState().update({ scene: 'living', time: 'auto' }) },
       galleryImages: initialImages,
       setGalleryImages: (images) => set({ galleryImages: [...new Set(images)] }),
       addGalleryImage: (url) => set((state) => ({ galleryImages: [...new Set([url, ...state.galleryImages])] })),

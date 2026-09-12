@@ -1,0 +1,353 @@
+.arcade-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #141d24;
+  color: #e9f3ef;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+.arcade-app .window-header {
+  flex: none;
+}
+.arcade-header-note {
+  margin-left: auto;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  opacity: 0.45;
+}
+.arcade-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #ffffff0e;
+  flex: none;
+}
+.arcade-selector button {
+  position: relative;
+  text-align: left;
+  padding: 13px 14px 12px 37px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #8c9ba3;
+}
+.arcade-selector button small {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  font-size: 10px;
+  color: #74818b;
+}
+.arcade-selector button strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+.arcade-selector button span {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 0.13em;
+  margin-top: 6px;
+  opacity: 0.6;
+}
+.arcade-selector button[aria-selected='true'] {
+  background: #a4edd00c;
+  border-color: #a4edd02a;
+  color: #b2efd8;
+}
+.arcade-selector button:hover {
+  background: #ffffff08;
+}
+.game-session {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.game-hud {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 14px 26px;
+  flex: none;
+}
+.score-block span,
+.game-record span {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #8b9b9f;
+  margin-bottom: 3px;
+}
+.score-block strong {
+  font:
+    500 29px/1.2 ui-monospace,
+    monospace;
+  letter-spacing: -0.07em;
+  color: #d4f5e8;
+}
+.score-block strong small {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.game-record strong {
+  font-size: 15px;
+  font-weight: 400;
+  color: #b7c7c7;
+}
+.game-lives {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+}
+.game-lives i {
+  width: 6px;
+  height: 6px;
+  background: #ffffff15;
+  border-radius: 50%;
+}
+.game-lives i.alive {
+  background: #b2efd8;
+}
+.game-tools {
+  display: flex;
+  gap: 6px;
+}
+.game-tools button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ffffff12;
+  background: #ffffff04;
+  border-radius: 7px;
+  color: #aec3c3;
+}
+.game-stage {
+  position: relative;
+  flex: 1;
+  min-height: 100px;
+  overflow: hidden;
+  outline: none !important;
+  background: #141d24;
+  touch-action: none;
+}
+.game-canvas {
+  position: absolute;
+  inset: 0;
+}
+.game-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(#0d161d24, #0d161d99);
+  backdrop-filter: blur(4px);
+}
+.game-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #b1d6c6;
+}
+.game-overlay h2 {
+  font:
+    400 clamp(25px, 4vw, 44px)/1.15 Georgia,
+    serif;
+  letter-spacing: -0.04em;
+  margin: 15px 0 12px;
+  color: #eef7f2;
+}
+.game-overlay p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #b4c2c5;
+  max-width: 300px;
+  margin: 0 0 23px;
+}
+.game-start {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 7px;
+  padding: 12px 20px;
+  background: #b3ebd3;
+  color: #19372e;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 22px #0003;
+}
+.game-start:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.game-start:hover {
+  background: #d1f5e5;
+}
+.game-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  border-top: 1px solid #ffffff0e;
+  flex: none;
+}
+.game-footer p {
+  font-size: 11px;
+  color: #a8babd;
+  margin: 0;
+  line-height: 1.7;
+}
+.game-footer p span {
+  display: block;
+  color: #71858c;
+  font-size: 10px;
+}
+.game-touch {
+  display: flex;
+  gap: 7px;
+}
+.game-touch button {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 36px;
+  background: #ffffff06;
+  border: 1px solid #ffffff15;
+  border-radius: 7px;
+  color: #b9d2cb;
+  touch-action: none;
+  font-size: 11px;
+  padding: 0 10px;
+}
+.game-touch button:active {
+  background: #b3ebd333;
+}
+.game-telemetry {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  color: #d7eee4;
+  pointer-events: none;
+}
+.game-telemetry > strong {
+  font:
+    28px ui-monospace,
+    monospace;
+}
+.game-telemetry small {
+  font-size: 10px;
+}
+.game-telemetry label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.game-telemetry meter {
+  width: 90px;
+  height: 5px;
+  accent-color: #b3ebd3;
+}
+@media (max-width: 767px) {
+  .arcade-header-note {
+    display: none;
+  }
+  .arcade-selector {
+    padding: 10px;
+    gap: 3px;
+  }
+  .arcade-selector button {
+    padding: 10px 7px;
+  }
+  .arcade-selector button small {
+    display: none;
+  }
+  .arcade-selector button strong {
+    font-size: 12px;
+  }
+  .arcade-selector button span {
+    font-size: 7px;
+  }
+  .game-hud {
+    padding: 12px 16px;
+    gap: 16px;
+  }
+  .game-record span {
+    font-size: 8px;
+  }
+  .game-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+  .game-footer p {
+    font-size: 10px;
+    text-align: center;
+  }
+  .game-footer p span {
+    display: none;
+  }
+  .game-touch {
+    justify-content: space-between;
+  }
+  .game-touch button {
+    flex: 1;
+    height: 42px;
+  }
+  .game-overlay {
+    padding: 15px;
+  }
+  .game-overlay h2 {
+    font-size: 32px;
+  }
+  .game-overlay p {
+    font-size: 12px;
+  }
+  .game-record strong {
+    font-size: 12px;
+  }
+}
+@media (max-height: 550px) {
+  .arcade-selector {
+    padding: 5px 12px;
+  }
+  .arcade-selector button {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .arcade-selector button span {
+    display: none;
+  }
+  .game-hud {
+    padding: 5px 16px;
+  }
+  .score-block strong {
+    font-size: 20px;
+  }
+  .game-footer {
+    padding: 5px 15px;
+  }
+  .game-overlay h2 {
+    font-size: 24px;
+    margin: 8px;
+  }
+  .game-overlay p {
+    display: none;
+  }
+  .game-start {
+    padding: 8px 16px;
+  }
+}
