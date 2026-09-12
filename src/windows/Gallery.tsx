@@ -145,6 +145,7 @@ const Gallery = () => {
     index: number
     wasFavorite: boolean
     wasWallpaper: boolean
+    time: 'auto' | 'manual'
   } | null>(null)
   const {
     galleryImages,
@@ -181,6 +182,7 @@ const Gallery = () => {
       wasFavorite: favorites.includes(src),
       wasWallpaper:
         wallpaper === src && useAppearance.getState().scene === 'photo',
+      time: useAppearance.getState().time,
     })
     const next = favorites.filter((item) => item !== src)
     setFavorites(next)
@@ -260,8 +262,10 @@ const Gallery = () => {
       setFavorites(restored)
       safeSave('gallery_favorites', JSON.stringify(restored))
     }
-    if (removed.wasWallpaper)
+    if (removed.wasWallpaper) {
       useSystemStore.getState().setWallpaper(removed.src)
+      useAppearance.getState().update({ time: removed.time })
+    }
     setRemoved(null)
     setStatus('Photo restored.')
   }

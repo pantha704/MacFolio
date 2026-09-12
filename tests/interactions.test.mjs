@@ -52,7 +52,7 @@ const directory = resolve('node_modules/.cache/macfolio-interactions')
 await mkdir(directory, { recursive: true })
 await build({
   stdin: {
-    contents: `export {default as Arcade} from './src/windows/Arcade'; export {default as Finder} from './src/windows/Finder'; export {default as Gallery} from './src/windows/Gallery'; export {default as Settings} from './src/windows/Settings'; export {default as GitHubProfile} from './src/components/apps/GitHubProfile'; export {default as Spotlight} from './src/components/menus/Spotlight'; export {useAppearance} from './src/store/appearance'; export {useSystemStore} from './src/store/systemStore'; export {useWindowStore} from './src/store/useWindowStore';`,
+    contents: `export {default as Arcade} from './src/windows/Arcade'; export {default as Finder} from './src/windows/Finder'; export {default as Gallery} from './src/windows/Gallery'; export {default as Settings} from './src/windows/Settings'; export {default as GitHubProfile} from './src/components/apps/GitHubProfile'; export {default as Spotlight} from './src/components/menus/Spotlight'; export {default as LivingScene} from './src/wallpapers/LivingScene'; export {default as DynamicWallpaper} from './src/components/DynamicWallpaper'; export {wallpaperRenders, wallpaperDisposals} from 'three'; export {useAppearance} from './src/store/appearance'; export {useSystemStore} from './src/store/systemStore'; export {useWindowStore} from './src/store/useWindowStore';`,
     resolveDir: process.cwd(),
     loader: 'tsx',
   },
@@ -62,7 +62,7 @@ await build({
   packages: 'external',
   outfile: resolve(directory, 'bundle.mjs'),
   jsx: 'automatic',
-  loader: { '.css': 'empty', '.jpg': 'text' },
+  loader: { '.css': 'empty', '.jpg': 'file' },
   define: {
     'import.meta.env.VITE_CLOUDINARY_CLOUD_NAME': 'undefined',
     'import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET': 'undefined',
@@ -77,13 +77,33 @@ await build({
     {
       name: 'graphics-boundary',
       setup(builder) {
+        builder.onResolve({ filter: /^three$/ }, () => ({
+          path: 'three-mock',
+          namespace: 'wallpaper-test',
+        }))
+        builder.onResolve({ filter: /^three-native$/ }, () => ({
+          path: 'three',
+          external: true,
+        }))
+        builder.onLoad({ filter: /.*/, namespace: 'wallpaper-test' }, () => ({
+          contents: `export * from 'three-native';
+            export const wallpaperRenders = []; export let wallpaperDisposals = 0;
+            export class WebGLRenderer {
+              domElement = document.createElement('canvas'); debug = {};
+              setPixelRatio() {} setSize() {} forceContextLoss() {}
+              render(scene) { const u = scene.children[0].material.uniforms;
+                wallpaperRenders.push({ time: u.time.value, sky: u.sky.value.getHexString(), sun: u.sunlight.value, meteor: u.meteorOpacity.value, particles: scene.children[1].visible }); }
+              dispose() { wallpaperDisposals++; }
+            }`,
+          loader: 'js',
+        }))
         builder.onResolve({ filter: /arcade\/renderer$/ }, () => ({
           path: 'graphics',
           namespace: 'test',
         }))
         builder.onLoad({ filter: /.*/, namespace: 'test' }, () => ({
           contents:
-            'export function createArcadeRenderer(){return {draw(){},dispose(){}}}',
+            'export function createArcadeRenderer(){return {draw(s){globalThis.arcadeSnapshot={player:s.player,energy:s.energy,speed:s.speed}},dispose(){}}}',
           loader: 'js',
         }))
       },
@@ -177,6 +197,7 @@ test('photo deletion Undo restores its position, favorite and selected wallpaper
       'https://example.test/b.jpg',
     ])
   app.useSystemStore.getState().setWallpaper('https://example.test/a.jpg')
+  app.useAppearance.getState().update({ time: 'manual', manualHour: 18.5 })
   localStorage.setItem(
     'gallery_favorites',
     JSON.stringify(['https://example.test/a.jpg']),
@@ -193,6 +214,8 @@ test('photo deletion Undo restores its position, favorite and selected wallpaper
     'https://example.test/b.jpg',
   ])
   assert.equal(app.useAppearance.getState().scene, 'photo')
+  assert.equal(app.useAppearance.getState().time, 'manual')
+  assert.equal(app.useAppearance.getState().manualHour, 18.5)
   assert.equal(
     app.useSystemStore.getState().wallpaper,
     'https://example.test/a.jpg',
@@ -224,12 +247,35 @@ test('manual time slider, automatic reset and seasonal preference work together'
   fireEvent.click(ui.getByRole('button', { name: 'night', exact: true }))
   assert.equal(app.useAppearance.getState().manualHour, 23)
   fireEvent.click(ui.getByRole('switch', { name: /Seasonal palette/ }))
-  assert.ok(ui.getByRole('combobox'))
+  assert.ok(ui.getByRole('combobox', { name: 'Hemisphere' }))
   fireEvent.click(ui.getByRole('button', { name: 'Follow my local time' }))
   assert.equal(app.useAppearance.getState().time, 'auto')
   assert.equal(app.useAppearance.getState().scene, 'living')
 })
-test('slow stars do not delay GitHub profile and repositories', async () => {
+test('seasonal atmosphere supports calendar, preview, hemispheres and saved preferences', async () => {
+  app.useWindowStore.getState().openWindow('settings')
+  const ui = render(h(app.Settings))
+  assert.equal(app.useAppearance.getState().atmosphere, true)
+  const selector = ui.getByRole('combobox', { name: 'Season', exact: true })
+  fireEvent.change(selector, { target: { value: 'spring' } })
+  assert.equal(app.useAppearance.getState().seasonMode, 'spring')
+  assert.equal(ui.queryByRole('combobox', { name: 'Hemisphere' }), null)
+  fireEvent.change(selector, { target: { value: 'autumn' } })
+  assert.equal(app.useAppearance.getState().seasonMode, 'autumn')
+  fireEvent.click(ui.getByRole('switch', { name: /Seasonal atmosphere/ }))
+  assert.equal(app.useAppearance.getState().atmosphere, false)
+  await act(() => app.useAppearance.persist.rehydrate())
+  assert.equal(app.useAppearance.getState().atmosphere, false)
+  assert.equal(app.useAppearance.getState().seasonMode, 'autumn')
+  fireEvent.click(ui.getByRole('button', { name: 'Restore defaults' }))
+  assert.equal(app.useAppearance.getState().seasonMode, 'auto')
+  assert.equal(app.useAppearance.getState().atmosphere, true)
+  fireEvent.change(ui.getByRole('combobox', { name: 'Hemisphere' }), {
+    target: { value: 'south' },
+  })
+  assert.equal(app.useAppearance.getState().hemisphere, 'south')
+})
+test('slow stars do not delay GitHub profile, and refresh failure preserves cached stars', async () => {
   let resolveStars
   const starPromise = new Promise((resolve) => {
     resolveStars = resolve
@@ -267,6 +313,18 @@ test('slow stars do not delay GitHub profile and repositories', async () => {
     assert.ok(ui.getByText('Loading recent stars…'))
     await act(async () => resolveStars([repo]))
     assert.ok(ui.getByText('MacFolio'))
+    ui.unmount()
+    globalThis.fetch = async (url) => ({
+      ok: !url.includes('starred'),
+      status: url.includes('starred') ? 503 : 200,
+      json: async () => (url.includes('/repos?') ? [repo] : user),
+    })
+    const refreshed = render(h(app.GitHubProfile))
+    fireEvent.click(refreshed.getByRole('button', { name: 'Stars' }))
+    await waitFor(() =>
+      assert.ok(refreshed.getByText(/Showing the last loaded collection/)),
+    )
+    assert.ok(refreshed.getByText('MacFolio'))
   } finally {
     globalThis.fetch = originalFetch
   }
@@ -288,11 +346,20 @@ test('window buttons minimize, restore and close; titlebar double click maximize
 })
 
 test('legacy night preferences migrate to night lighting, and corrupt hours fall back safely', async () => {
-  localStorage.setItem('macfolio-appearance', JSON.stringify({ version: 1, state: { mode: 'night' } }))
+  localStorage.setItem(
+    'macfolio-appearance',
+    JSON.stringify({ version: 1, state: { mode: 'night' } }),
+  )
   await app.useAppearance.persist.rehydrate()
   assert.equal(app.useAppearance.getState().scene, 'living')
   assert.equal(app.useAppearance.getState().manualHour, 23)
-  localStorage.setItem('macfolio-appearance', JSON.stringify({ version: 3, state: { manualHour: 'broken', manualPhase: 'invalid' } }))
+  localStorage.setItem(
+    'macfolio-appearance',
+    JSON.stringify({
+      version: 3,
+      state: { manualHour: 'broken', manualPhase: 'invalid' },
+    }),
+  )
   await app.useAppearance.persist.rehydrate()
   assert.equal(app.useAppearance.getState().manualHour, 12)
 })
@@ -302,8 +369,13 @@ test('time preview shows exact minutes despite floating point fractional hours',
   const ui = render(h(app.Settings))
   fireEvent.click(ui.getByRole('button', { name: 'Set the mood' }))
   for (const minute of [1, 367, 1086, 1439]) {
-    fireEvent.change(ui.getByLabelText('Preview time of day'), { target: { value: minute } })
-    assert.equal(ui.container.querySelector('output').textContent, `${String(Math.floor(minute / 60)).padStart(2,'0')}:${String(minute % 60).padStart(2,'0')}`)
+    fireEvent.change(ui.getByLabelText('Preview time of day'), {
+      target: { value: minute },
+    })
+    assert.equal(
+      ui.container.querySelector('output').textContent,
+      `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`,
+    )
   }
 })
 
@@ -319,4 +391,167 @@ test('Spotlight launches the chosen app without restoring focus to the previous 
   assert.equal(app.useWindowStore.getState().focusedWindow, 'terminal')
   assert.equal(restored, 0)
   previous.remove()
+})
+
+test('wallpaper stops in the background, resumes without a time jump and releases its renderer', async () => {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+  }
+  globalThis.devicePixelRatio = 1
+  stamp = performance.now()
+  const before = app.wallpaperDisposals
+  const props = {
+    options: {
+      hour: 0,
+      motion: true,
+      lowData: false,
+      season: null,
+      particles: 'spring',
+    },
+    onReady() {},
+    onFailure() {
+      assert.fail('unexpected graphics failure')
+    },
+  }
+  const ui = render(h(app.LivingScene, props))
+  await advance(1)
+  const first = app.wallpaperRenders.at(-1)
+  assert.equal(first.sky, '040917')
+  assert.equal(first.particles, false)
+  assert.ok(first.time > 0.8 && first.time < 1.1)
+  const count = app.wallpaperRenders.length
+  Object.defineProperty(document, 'hidden', { configurable: true, value: true })
+  fireEvent(document, new Event('visibilitychange'))
+  await advance(20)
+  assert.equal(app.wallpaperRenders.length, count)
+  Object.defineProperty(document, 'hidden', {
+    configurable: true,
+    value: false,
+  })
+  fireEvent(document, new Event('visibilitychange'))
+  assert.equal(app.wallpaperRenders.at(-1).time, first.time)
+  ui.unmount()
+  assert.equal(app.wallpaperDisposals, before + 1)
+  const stopped = app.wallpaperRenders.length
+  await advance(1)
+  assert.equal(app.wallpaperRenders.length, stopped)
+})
+
+test('static wallpaper applies time and season changes immediately without animating meteors', () => {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+  }
+  globalThis.devicePixelRatio = 1
+  const props = {
+    options: {
+      hour: 0,
+      motion: false,
+      lowData: true,
+      season: null,
+      particles: 'spring',
+    },
+    onReady() {},
+    onFailure() {
+      assert.fail('unexpected graphics failure')
+    },
+  }
+  const ui = render(h(app.LivingScene, props))
+  assert.equal(app.wallpaperRenders.at(-1).sun, 0)
+  ui.rerender(
+    h(app.LivingScene, { ...props, options: { ...props.options, hour: 12 } }),
+  )
+  const day = app.wallpaperRenders.at(-1)
+  assert.equal(day.sun, 1)
+  assert.equal(day.particles, true)
+  assert.equal(day.time, 0)
+  assert.equal(day.meteor, 0)
+  ui.rerender(
+    h(app.LivingScene, {
+      ...props,
+      options: { ...props.options, hour: 12, particles: null },
+    }),
+  )
+  assert.equal(app.wallpaperRenders.at(-1).particles, false)
+})
+
+test('Arcade keyboard tabs and shifted steering release work during boost', async () => {
+  app.useWindowStore.getState().openWindow('arcade')
+  const ui = render(h(app.Arcade))
+  fireEvent.keyDown(ui.getByRole('tab', { name: /Orbit Pinball/ }), {
+    key: 'End',
+  })
+  const racer = ui.getByRole('tab', { name: /Nightshift/ })
+  assert.equal(racer.getAttribute('aria-selected'), 'true')
+  assert.equal(document.activeElement, racer)
+  assert.equal(ui.getByRole('tabpanel').id, racer.getAttribute('aria-controls'))
+  await waitFor(() =>
+    assert.equal(
+      ui.getByRole('button', { name: 'Start playing' }).disabled,
+      false,
+    ),
+  )
+  fireEvent.click(ui.getByRole('button', { name: 'Start playing' }))
+  const stage = ui.getByLabelText('Nightshift keyboard controls')
+  await advance(1)
+  fireEvent.keyDown(stage, { key: 'd' })
+  fireEvent.keyDown(stage, { key: 'Shift' })
+  await advance(0.12)
+  const shifted = globalThis.arcadeSnapshot
+  assert.ok(shifted.player > 0.1)
+  assert.ok(shifted.energy < 100)
+  fireEvent.keyUp(stage, { key: 'D', shiftKey: true })
+  fireEvent.keyUp(stage, { key: 'Shift' })
+  await advance(0.15)
+  assert.equal(globalThis.arcadeSnapshot.player, shifted.player)
+  assert.ok(globalThis.arcadeSnapshot.energy >= shifted.energy)
+  fireEvent.keyDown(stage, { key: 'A', shiftKey: true })
+  await advance(0.12)
+  assert.ok(globalThis.arcadeSnapshot.player < shifted.player)
+  fireEvent.keyUp(stage, { key: 'a' })
+})
+
+test('failed photo wallpaper falls back, and obsolete image callbacks cannot overwrite it', () => {
+  const originalImage = globalThis.Image,
+    requests = []
+  class PendingImage {
+    constructor() {
+      requests.push(this)
+    }
+  }
+  Object.defineProperty(globalThis, 'Image', {
+    configurable: true,
+    value: PendingImage,
+  })
+  app.useAppearance
+    .getState()
+    .update({ scene: 'photo', time: 'manual', manualHour: 23 })
+  app.useSystemStore.getState().setWallpaper('https://example.test/first.jpg')
+  try {
+    const ui = render(h(app.DynamicWallpaper))
+    const current = () =>
+      ui.container.querySelector('.wallpaper-current').getAttribute('src')
+    const fallback = current()
+    const first = requests.at(-1)
+    act(() => first.onload())
+    assert.equal(current(), 'https://example.test/first.jpg')
+    const obsolete = first.onload
+    act(() =>
+      app.useSystemStore
+        .getState()
+        .setWallpaper('https://example.test/missing.jpg'),
+    )
+    act(() => requests.at(-1).onerror())
+    assert.equal(current(), fallback)
+    act(() => obsolete())
+    assert.equal(current(), fallback)
+    ui.unmount()
+    assert.equal(requests.at(-1).onerror, null)
+  } finally {
+    Object.defineProperty(globalThis, 'Image', {
+      configurable: true,
+      value: originalImage,
+    })
+  }
 })

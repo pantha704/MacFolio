@@ -134,6 +134,10 @@
   background: #141d24;
   touch-action: none;
 }
+.game-stage:focus-visible {
+  outline: 1px solid #b3ebd366 !important;
+  outline-offset: -1px !important;
+}
 .game-canvas {
   position: absolute;
   inset: 0;

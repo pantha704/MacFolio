@@ -66,9 +66,13 @@ export default function Navbar() {
           </button>
           <span
             className="connection-status"
+            role="status"
             title={online ? 'Device is online' : 'Device is offline'}
           >
             {online ? <Wifi size={15} /> : <WifiOff size={15} />}
+            <span className="sr-only">
+              {online ? 'Device is online' : 'Device is offline'}
+            </span>
           </span>
           <button
             aria-label="Desktop appearance"

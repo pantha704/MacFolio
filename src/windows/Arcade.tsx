@@ -19,6 +19,7 @@ import {
   stepGame,
   type GameId,
   type Input,
+  type Phase,
 } from '../arcade/engine'
 import '../arcade/arcade.css'
 function GameSession({ game }: { game: GameId }) {
@@ -26,14 +27,16 @@ function GameSession({ game }: { game: GameId }) {
     input = useRef(emptyInput()),
     host = useRef<HTMLDivElement>(null),
     stage = useRef<HTMLDivElement>(null)
-  const best = useRef(
-    Math.max(0, Number(safeStorage.getItem(`arcade-${game}`)) || 0),
-  )
+  const [initialBest] = useState(() => {
+    const saved = Number(safeStorage.getItem(`arcade-${game}`))
+    return Number.isFinite(saved) ? Math.max(0, saved) : 0
+  })
+  const best = useRef(initialBest)
   const [hud, setHud] = useState({
-    phase: state.current.phase,
+    phase: 'ready' as Phase,
     score: 0,
     lives: 3,
-    best: best.current,
+    best: initialBest,
     energy: 100,
     speed: 0,
   })
@@ -177,12 +180,12 @@ function GameSession({ game }: { game: GameId }) {
     publish()
   }
   const keys: Record<string, keyof Input> = {
-    ArrowLeft: 'left',
+    arrowleft: 'left',
     a: 'left',
-    ArrowRight: 'right',
+    arrowright: 'right',
     d: 'right',
-    Shift: 'boost',
-    ArrowDown: 'brake',
+    shift: 'boost',
+    arrowdown: 'brake',
     s: 'brake',
   }
   const held = (key: keyof Input) => ({
@@ -202,7 +205,12 @@ function GameSession({ game }: { game: GameId }) {
     },
   })
   return (
-    <div className="game-session">
+    <div
+      className="game-session"
+      role="tabpanel"
+      id={`arcade-panel-${game}`}
+      aria-labelledby={`arcade-tab-${game}`}
+    >
       <div className="game-hud">
         <div className="score-block" aria-label="Score">
           <span>{game === 'racer' ? 'DISTANCE' : 'SCORE'}</span>
@@ -241,9 +249,10 @@ function GameSession({ game }: { game: GameId }) {
         ref={stage}
         aria-label={`${games[game].name} keyboard controls`}
         onKeyDown={(e) => {
-          if (keys[e.key]) {
+          const action = keys[e.key.toLowerCase()]
+          if (action) {
             e.preventDefault()
-            input.current[keys[e.key]] = true
+            input.current[action] = true
           }
           if (e.code === 'Space' && !e.repeat) {
             e.preventDefault()
@@ -252,9 +261,10 @@ function GameSession({ game }: { game: GameId }) {
           }
         }}
         onKeyUp={(e) => {
-          if (keys[e.key]) {
+          const action = keys[e.key.toLowerCase()]
+          if (action) {
             e.preventDefault()
-            input.current[keys[e.key]] = false
+            input.current[action] = false
           }
         }}
         onBlur={(e) => {
@@ -372,10 +382,31 @@ function Arcade() {
         className="arcade-selector"
         role="tablist"
         aria-label="Choose a game"
+        onKeyDown={(event) => {
+          const ids = Object.keys(games) as GameId[]
+          const index = ids.indexOf(game)
+          const next =
+            event.key === 'ArrowRight'
+              ? (index + 1) % ids.length
+              : event.key === 'ArrowLeft'
+                ? (index + ids.length - 1) % ids.length
+                : event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? ids.length - 1
+                    : -1
+          if (next < 0) return
+          event.preventDefault()
+          setGame(ids[next])
+          document.getElementById(`arcade-tab-${ids[next]}`)?.focus()
+        }}
       >
         {(Object.keys(games) as GameId[]).map((id, i) => (
           <button
             role="tab"
+            id={`arcade-tab-${id}`}
+            aria-controls={`arcade-panel-${id}`}
+            tabIndex={game === id ? 0 : -1}
             aria-selected={game === id}
             key={id}
             onClick={() => setGame(id)}

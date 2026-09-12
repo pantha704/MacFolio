@@ -89,7 +89,7 @@ export default function GitHubProfile() {
       })
       .catch(() => {
         if (active) setStarsError(true)
-        return [] as GitHubRepo[]
+        return null
       })
     const profileRequest = Promise.all([
       getJson<GitHubUser>(
@@ -110,7 +110,7 @@ export default function GitHubProfile() {
           repos: repos
             .filter((repo) => repo && typeof repo.name === 'string')
             .map((repo) => ({ ...repo, html_url: githubUrl(repo.html_url) })),
-          starred: [],
+          starred: memoryCache?.starred ?? [],
           savedAt: Date.now(),
         }
         setData(memoryCache)
@@ -129,7 +129,7 @@ export default function GitHubProfile() {
     void Promise.all([profileRequest, starredRequest])
       .then(([, starred]) => {
         if (!active) return
-        if (memoryCache) {
+        if (memoryCache && starred !== null) {
           memoryCache = {
             ...memoryCache,
             starred: starred
@@ -298,7 +298,9 @@ export default function GitHubProfile() {
           </label>
           {tab === 'stars' && starsError && (
             <p className="github-note">
-              Starred repositories are temporarily unavailable.
+              {data.starred.length
+                ? 'Starred repositories couldn’t refresh. Showing the last loaded collection.'
+                : 'Starred repositories are temporarily unavailable.'}
             </p>
           )}
           {tab === 'stars' && starsLoading ? (

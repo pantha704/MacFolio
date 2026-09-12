@@ -4,6 +4,7 @@ import { useAppearance } from '../store/appearance'
 import { wallpaperScenes } from '../wallpapers/manifest'
 import { useLocalClock } from '../hooks/useLocalClock'
 import { phaseAt, type Phase } from '../utils/ambience'
+import type { SeasonMode } from '../wallpapers/atmosphere'
 const phases: Phase[] = ['dawn', 'day', 'evening', 'night']
 function Settings() {
   const prefs = useAppearance(),
@@ -120,7 +121,7 @@ function Settings() {
             <span>
               <strong>Living scenery</strong>
               <small>
-                Gentle water and cloud movement. Respects reduced motion.
+                Water, starlight and drifting seasons. Respects reduced motion.
               </small>
             </span>
             <input
@@ -146,6 +147,44 @@ function Settings() {
           </label>
           <label>
             <span>
+              <strong>Seasonal atmosphere</strong>
+              <small>
+                Daytime blossoms, summer motes, oak leaves or soft snow.
+              </small>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={prefs.atmosphere}
+              onChange={(e) => set({ atmosphere: e.target.checked })}
+            />
+          </label>
+          {(prefs.atmosphere || prefs.seasonal) && (
+            <label>
+              <span>
+                <strong>Season</strong>
+                <small id="season-help">
+                  Follow the calendar, or choose a favourite.
+                </small>
+              </span>
+              <select
+                aria-label="Season"
+                aria-describedby="season-help"
+                value={prefs.seasonMode}
+                onChange={(e) =>
+                  set({ seasonMode: e.target.value as SeasonMode })
+                }
+              >
+                <option value="auto">Current season</option>
+                <option value="spring">Spring · cherry blossoms</option>
+                <option value="summer">Summer · golden light</option>
+                <option value="autumn">Autumn · oak leaves</option>
+                <option value="winter">Winter · snowfall</option>
+              </select>
+            </label>
+          )}
+          <label>
+            <span>
               <strong>Seasonal palette</strong>
               <small>Subtle calendar-based colour changes.</small>
             </span>
@@ -156,20 +195,21 @@ function Settings() {
               onChange={(e) => set({ seasonal: e.target.checked })}
             />
           </label>
-          {prefs.seasonal && (
-            <label>
-              <span>Hemisphere</span>
-              <select
-                value={prefs.hemisphere}
-                onChange={(e) =>
-                  set({ hemisphere: e.target.value as 'north' | 'south' })
-                }
-              >
-                <option value="north">Northern</option>
-                <option value="south">Southern</option>
-              </select>
-            </label>
-          )}
+          {(prefs.seasonal || prefs.atmosphere) &&
+            prefs.seasonMode === 'auto' && (
+              <label>
+                <span>Hemisphere</span>
+                <select
+                  value={prefs.hemisphere}
+                  onChange={(e) =>
+                    set({ hemisphere: e.target.value as 'north' | 'south' })
+                  }
+                >
+                  <option value="north">Northern</option>
+                  <option value="south">Southern</option>
+                </select>
+              </label>
+            )}
         </section>
         <button className="settings-reset" onClick={prefs.reset}>
           Restore defaults

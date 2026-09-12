@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAppearance } from '../store/appearance'
 import { useSystemStore } from '../store/systemStore'
 import { phaseAt, seasonAt } from '../utils/ambience'
-import { sceneSource } from '../wallpapers/manifest'
+import { landscapePhases, sceneSource } from '../wallpapers/manifest'
 import { useLocalClock } from '../hooks/useLocalClock'
 import { useWindowStore } from '../store/useWindowStore'
 const LivingScene = lazy(() =>
@@ -19,7 +19,8 @@ export default function DynamicWallpaper() {
     preferences.time === 'manual' ? preferences.manualHour : now.getHours(),
   )
   const requested = sceneSource(preferences.scene, phase, photo, now)
-  const [layers, setLayers] = useState({ current: requested, previous: '' })
+  const fallback = landscapePhases[phase]
+  const [layers, setLayers] = useState({ current: fallback, previous: '' })
   const [ready, setReady] = useState(false),
     [failed, setFailed] = useState(false)
   const onReady = useCallback(() => setReady(true), []),
@@ -27,19 +28,23 @@ export default function DynamicWallpaper() {
   useEffect(() => {
     let active = true
     const image = new Image()
-    image.onload = () => {
+    const commit = (source: string) => {
       if (active)
         setLayers((old) =>
-          old.current === requested
+          old.current === source
             ? old
-            : { current: requested, previous: old.current },
+            : { current: source, previous: old.current },
         )
     }
+    image.onload = () => commit(requested)
+    image.onerror = () => commit(fallback)
     image.src = requested
     return () => {
       active = false
+      image.onload = null
+      image.onerror = null
     }
-  }, [requested])
+  }, [requested, fallback])
   useEffect(() => {
     if (!layers.previous) return
     const timer = setTimeout(
@@ -49,9 +54,10 @@ export default function DynamicWallpaper() {
     return () => clearTimeout(timer)
   }, [layers.previous])
   const living = preferences.scene === 'living' && !failed
-  const season = preferences.seasonal
-    ? seasonAt(now.getMonth(), preferences.hemisphere === 'south')
-    : null
+  const season =
+    preferences.seasonMode === 'auto'
+      ? seasonAt(now.getMonth(), preferences.hemisphere === 'south')
+      : preferences.seasonMode
   return (
     <div
       aria-hidden="true"
@@ -80,7 +86,8 @@ export default function DynamicWallpaper() {
                 preferences.time === 'manual' ? preferences.manualHour : null,
               motion: preferences.motion === 'subtle',
               lowData: preferences.lowData || playing,
-              season,
+              season: preferences.seasonal ? season : null,
+              particles: preferences.atmosphere ? season : null,
             }}
             onReady={onReady}
             onFailure={onFailure}

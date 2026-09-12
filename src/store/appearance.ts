@@ -4,6 +4,7 @@ import { safeStorage } from '../utils/storage'
 import type { Phase } from '../utils/ambience'
 import type { SceneId } from '../wallpapers/manifest'
 import { phaseHours } from '../utils/daylight'
+import { seasons, type SeasonMode } from '../wallpapers/atmosphere'
 
 export type Hemisphere = 'north' | 'south'
 export type AppearancePreferences = {
@@ -13,6 +14,8 @@ export type AppearancePreferences = {
   manualHour: number
   motion: 'still' | 'subtle'
   seasonal: boolean
+  atmosphere: boolean
+  seasonMode: SeasonMode
   hemisphere: Hemisphere
   lowData: boolean
 }
@@ -24,6 +27,8 @@ const defaults: AppearancePreferences = {
   manualHour: 12,
   motion: 'subtle',
   seasonal: false,
+  atmosphere: true,
+  seasonMode: 'auto',
   hemisphere: 'north',
   lowData: false,
 }
@@ -55,7 +60,7 @@ export const useAppearance = create<AppearanceStore>()(
     }),
     {
       name: 'macfolio-appearance',
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => safeStorage),
       migrate: (persisted: unknown) => {
         const value = (persisted ?? {}) as Record<string, unknown>
@@ -111,6 +116,15 @@ export const useAppearance = create<AppearanceStore>()(
             typeof value.seasonal === 'boolean'
               ? value.seasonal
               : defaults.seasonal,
+          atmosphere:
+            typeof value.atmosphere === 'boolean'
+              ? value.atmosphere
+              : defaults.atmosphere,
+          seasonMode: seasons.includes(
+            value.seasonMode as (typeof seasons)[number],
+          )
+            ? value.seasonMode!
+            : 'auto',
           hemisphere: value.hemisphere === 'south' ? 'south' : 'north',
           lowData: value.lowData === true,
         }

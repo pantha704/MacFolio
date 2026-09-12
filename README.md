@@ -5,7 +5,7 @@ Pratham Jaiswal’s interactive portfolio, built as a personal desktop with Reac
 ## Experience
 
 - A responsive desktop with a clear introduction and selected project shortcuts.
-- Stillwater: a Three.js shader landscape with continuous local-time lighting, manual time preview, optional seasonal palettes, reduced-motion support, and a static fallback.
+- Stillwater: a Three.js landscape with continuous local-time lighting, a deep star field and tapered shooting stars. Spring petals, summer motes, autumn oak leaves and winter snow drift during daylight. Settings offer season previews, hemisphere selection, reduced motion, low power and a static fallback.
 - After Hours: 3D Orbit Pinball, Rally Room, and Nightshift. Fixed-step physics, independent touch controls, pause on app switch, and local high scores.
 - Finder with project filtering, project details, source/live links, about information, and résumé access.
 - Spotlight search: use **Command K** or **Control K**, arrow keys, Enter, and Escape.
@@ -38,7 +38,7 @@ npm run lint
 npm run build
 ```
 
-The 35 tests cover physics, day-cycle continuity, preference migration, DOM app interactions, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock the graphics boundary: they do not verify GPU rendering. CI runs these checks on pull requests and pushes to `master`.
+The 44 tests cover physics, meteor trajectories, all-day particle continuity, calendar seasons, day-cycle continuity, wallpaper suspension/cleanup, preference migration, DOM app interactions, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock the graphics boundary: they do not verify GPU rendering. CI runs these checks on pull requests and pushes to `master`.
 
 The current redesign is awaiting visual/device acceptance. See [Stillwater release verification](docs/STILLWATER_RELEASE.md) for exact coverage and remaining checks.
 

@@ -52,10 +52,7 @@ select {
 *:focus {
   outline: none;
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
+*:focus-visible {
   outline: 1px solid #b3ebd399 !important;
   outline-offset: 2px !important;
   box-shadow: none !important;
@@ -934,6 +931,8 @@ select:focus-visible {
   transform: translateX(12px);
 }
 .settings-toggles select {
+  max-width: 55%;
+  min-width: 0;
   font-size: 11px;
   background: #293e34;
   border: 1px solid #ffffff12;
