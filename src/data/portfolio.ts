@@ -11,7 +11,7 @@ export const profile = {
   resume: '/files/resume.pdf',
 }
 
-// Curated public repositories verified against GitHub on 2026-09-08.
+// Public project visibility rechecked against GitHub on 2026-09-12.
 export const projects = [
   { name: 'Homeworker', repo: 'home-worker', category: 'Document tools', description: 'Turn PDFs and images into reviewable A4 notes using licensed handwriting personas.', tags: ['Python', 'Documents'] },
   { name: 'Auto Apply Jobs', repo: 'auto-apply-jobs', category: 'Automation', description: 'Multi-source application automation with a SQLite queue, session replication and profile-driven form filling.', tags: ['Python', 'Automation'] },

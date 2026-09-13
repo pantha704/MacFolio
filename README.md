@@ -4,7 +4,10 @@ Pratham Jaiswal’s interactive portfolio, built as a personal desktop with Reac
 
 ## Experience
 
-- A responsive desktop with a clear introduction and selected project shortcuts.
+- A responsive desktop with a clear introduction, a listening room in place of the side app shortcuts, and every application available in the Dock.
+- Stillwater: a mirrored Three.js coast with textured headlands, pines, drifting mist, waves and restrained sun/star reflections. Continuous local-time lighting, a deep star field and tapered shooting stars. Spring petals, summer motes, autumn oak leaves and winter snow drift during daylight. Settings offer mirror/season previews, hemisphere selection, reduced motion, low power and a static fallback.
+- Music: Spotify embeds and local audio, without a paid API or backend. Local queue, play/pause, skip, seek, volume and repeat controls; files stay on the visitor’s device. Spotify playback can be preview-limited. See [music setup](docs/MUSIC_SETUP.md) to publish your own default selection.
+- After Hours: 3D Orbit Pinball, Rally Room, and Nightshift. Fixed-step physics, independent touch controls, pause on app switch, and local high scores.
 - Finder with project filtering, project details, source/live links, about information, and résumé access.
 - Spotlight search: use **Command K** or **Control K**, arrow keys, Enter, and Escape.
 - Windows that drag and resize within the available desktop, preserve geometry through maximize/restore, and retain application state while minimized. Use **Alt W** to close the active window.
@@ -32,10 +35,13 @@ The historical `bun.lock` is retained, but npm is the verified install path for 
 
 ```sh
 node --test tests/*.test.mjs
+npm run lint
 npm run build
 ```
 
-The tests cover window bounds, window-state transitions, safe URL routing, and corrupted/blocked browser storage. CI runs these checks on pull requests and pushes to `master`.
+The 55 tests cover physics, meteor trajectories, all-day particle continuity, calendar seasons, day-cycle continuity, wallpaper suspension/cleanup, preference migration, DOM app interactions, music queues and source switching, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock graphics and audio boundaries: they do not verify GPU rendering, audio output or Spotify availability. CI runs these checks on pull requests and pushes to `master`.
+
+The current redesign is awaiting visual/device acceptance. See [Stillwater release verification](docs/STILLWATER_RELEASE.md) for exact coverage and remaining checks.
 
 The build performs TypeScript checks and creates `dist/`. TypeScript is configured not to emit declarations beside source files. Historical generated declaration files remain in the repository; they are not build outputs of this revision.
 
@@ -43,16 +49,20 @@ Automated build and logic checks do **not** replace browser testing. Before merg
 
 ## Customize
 
-| Content | Location |
-| --- | --- |
-| Name, role, email, avatar, social links | `src/data/portfolio.ts` |
-| Project folder names and URLs, original bio | `src/constants/index.ts` |
-| Project summaries, categories, tags | `src/data/portfolio.ts` |
-| Desktop layout and copy | `src/components/Welcome.tsx` |
-| Desktop/window styles | `src/desktop.css` |
-| Résumé | `public/files/resume.pdf` |
-| Default gallery | `src/constants/initialImages.json` |
-| Search title/description and no-JavaScript fallback | `index.html` |
+| Content                                             | Location                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| Name, role, email, avatar, social links             | `src/data/portfolio.ts`                                               |
+| Project folder names and URLs, original bio         | `src/constants/index.ts`                                              |
+| Project summaries, categories, tags                 | `src/data/portfolio.ts`                                               |
+| Desktop layout and copy                             | `src/components/Welcome.tsx`                                          |
+| Desktop/window styles                               | `src/studio.css` (overrides the existing base styles)                 |
+| Landscape lighting, shader and settings             | `src/utils/daylight.ts`, `src/wallpapers/`, `src/store/appearance.ts` |
+| Arcade physics, renderer and appearance             | `src/arcade/`                                                         |
+| Public Spotify selection and hosted audio queue     | `src/data/music.ts` ([setup](docs/MUSIC_SETUP.md))                    |
+| Listening room behavior and appearance              | `src/components/DesktopMusic.tsx`, `src/music/`                       |
+| Résumé                                              | `public/files/resume.pdf`                                             |
+| Default gallery                                     | `src/constants/initialImages.json`                                    |
+| Search title/description and no-JavaScript fallback | `index.html`                                                          |
 
 When changing identity, update `index.html` and the original about text as well. The current source identifies the owner as **Pratham Jaiswal**; it has not been replaced using information from outside the repository.
 
