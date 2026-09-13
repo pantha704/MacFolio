@@ -3,72 +3,15 @@ import * as THREE from 'three'
 import { daylightAt, localHour } from '../utils/daylight'
 import { meteorAt, type Season } from './atmosphere'
 import { createSeasonalParticles } from './SeasonalParticles'
+import { coastalFragment } from './coastalShader'
 export type LivingOptions = {
   hour: number | null
   motion: boolean
   lowData: boolean
   season: Season | null
   particles: Season | null
+  flipHorizontal?: boolean
 }
-const fragment = /* glsl */ `
-varying vec2 vUv;
-uniform vec3 sky; uniform vec3 horizon; uniform vec3 land;
-uniform float time; uniform float sunlight; uniform float aspect; uniform float season;
-uniform vec2 viewport; uniform vec4 meteor; uniform float meteorOpacity;
-float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float noise(vec2 p){vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-float hill(float x,float seed){return .06*sin(x*2.5+seed)+.028*sin(x*6.4+seed)+.011*sin(x*15.+seed);}
-vec3 stars(vec2 p,float scale,float density){
- vec2 grid=p*scale,cell=floor(grid);float seed=hash(cell);
- if(seed<1.-density)return vec3(0.);
- vec2 offset=.18+.64*vec2(hash(cell+17.3),hash(cell+41.9));
- float d=length(fract(grid)-offset)*viewport.y/scale;
- float radius=mix(.45,1.05,hash(cell+8.));
- float point=exp(-d*d/(radius*radius));
- float halo=exp(-d*d/(radius*radius*8.))*.045;
- float twinkle=.88+.12*sin(time*(.55+hash(cell+3.))+seed*190.);
- vec3 tint=mix(vec3(.64,.77,1.),vec3(1.,.88,.69),hash(cell+9.));
- return tint*(point+halo)*mix(.12,.65,hash(cell+12.))*twinkle;
-}
-vec3 shootingStar(vec2 p){
- vec2 segment=meteor.xy-meteor.zw;
- float along=clamp(dot(p-meteor.zw,segment)/max(dot(segment,segment),.000001),0.,1.);
- float distance=length(p-meteor.zw-segment*along)*viewport.y;
- float taper=pow(along,2.2),core=exp(-distance*distance/1.2);
- float glow=exp(-distance*distance/12.)*.16;
- float head=exp(-pow(length(p-meteor.xy)*viewport.y,2.)/3.);
- return mix(vec3(.48,.66,1.),vec3(1.,.95,.86),along)*((core+glow)*taper+head*.5)*meteorOpacity;
-}
-void main(){
- vec2 uv=vUv; float x=(uv.x-.5)*aspect;
- vec3 col=mix(horizon,sky,smoothstep(.35,1.,uv.y));
- float clouds=noise(vec2(x*2.+time*.006,uv.y*7.));
- col+=.06*clouds*smoothstep(.6,.9,uv.y)*sunlight;
- vec2 sunPos=vec2(.42,.56+sunlight*.19);
- float d=length(vec2(x,uv.y)-sunPos);
- col+=vec3(1.,.78,.46)*exp(-d*9.)*.12*sunlight;
- col=mix(col,vec3(1.,.91,.74), (1.-smoothstep(.019,.023,d))*sunlight);
- float night=1.-smoothstep(.02,.42,sunlight);
- if(night>.001){
-  vec2 p=vec2(x,uv.y);
-  float bandDistance=(x*.3+uv.y-.95)*5.;
-  float band=exp(-bandDistance*bandDistance);
-  col+=vec3(.002,.0025,.006)*band*noise(p*13.)*night;
-  col+=(stars(p,140.,.027)+stars(p+7.1,65.,.017)+shootingStar(p))*night*smoothstep(.42,.69,uv.y);
- }
- if(uv.y<.45){float ripple=sin(uv.y*320.+noise(vec2(x*20.,uv.y*40.))*4.+time*.4); col=mix(land*.55,horizon*.7,uv.y/.45)+ripple*.007;col+=vec3(.16,.1,.045)*exp(-abs(x-sunPos.x)*15.)*sunlight*max(0.,ripple);}
- for(int i=0;i<4;i++){
-  float f=float(i);float height=.46-f*.079+hill(x*(1.+f*.2),f*1.8);
-  float valley=(x-.25)*1.8;
-  height-=exp(-valley*valley)*(.08+f*.026);
-  vec3 tint=mix(horizon*.63,land, .35+f*.21);
-  tint=mix(tint,vec3(.37,.23,.12)*(sunlight*.65+.15),max(season,0.)*.23);
-  tint=mix(tint,vec3(.55,.66,.69)*(sunlight*.6+.2),max(-season,0.)*.28);
-  col=mix(col,tint,1.-smoothstep(height-.001,height+.001,uv.y));
- }
- col=max(vec3(0.),col+(hash(gl_FragCoord.xy)-.5)/1800.); gl_FragColor=vec4(col,1.);
- #include <colorspace_fragment>
-}`
 export default function LivingScene({
   options,
   onReady,
@@ -122,12 +65,13 @@ export default function LivingScene({
       viewport: { value: new THREE.Vector2(1, 1) },
       meteor: { value: new THREE.Vector4() },
       meteorOpacity: { value: 0 },
+      mirror: { value: current.current.flipHorizontal ?? true },
     }
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader:
         'varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position,1.);}',
-      fragmentShader: fragment,
+      fragmentShader: coastalFragment,
     })
     renderer.debug.onShaderError = onFailure
     scene.add(new THREE.Mesh(geometry, material))
@@ -185,6 +129,7 @@ export default function LivingScene({
         // Never jump particles or a meteor across the screen after a stalled frame.
         if (moving) elapsed += Math.min(dt, 0.05)
         uniforms.time.value = elapsed
+        uniforms.mirror.value = prefs.flipHorizontal ?? true
         const seasonalTint =
           prefs.season === 'autumn' ? 1 : prefs.season === 'winter' ? -1 : 0
         uniforms.season.value += (seasonalTint - uniforms.season.value) * blend

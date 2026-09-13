@@ -93,6 +93,9 @@ select {
 .studio-wallpaper .wallpaper-previous {
   z-index: 0;
 }
+.studio-wallpaper[data-flipped='true'] .wallpaper-layer {
+  transform: scaleX(-1);
+}
 .studio-wallpaper .wallpaper-current {
   z-index: 1;
   animation: studio-fade 1.8s ease both;
@@ -215,7 +218,7 @@ select {
   position: absolute;
   left: 5vw;
   bottom: 12%;
-  max-width: 65%;
+  max-width: calc(90% - 344px);
   text-align: left;
 }
 .studio-desktop .desktop-greeting > span {
@@ -274,54 +277,6 @@ select {
 .desktop-actions button + button:hover {
   background: #ffffff15;
 }
-.studio-desktop .desktop-shortcuts {
-  position: absolute;
-  right: 4vw;
-  top: 50%;
-  transform: translateY(-50%);
-  display: grid;
-  grid-template-columns: repeat(2, 82px);
-  gap: 30px 14px;
-  padding: 0;
-  background: none;
-  border: 0;
-}
-.desktop-shortcuts > button {
-  font-size: 11px;
-  font-weight: 400;
-  gap: 9px;
-  color: #e7f0e9;
-  text-shadow: 0 2px 6px #07182480;
-  padding: 5px;
-  border-radius: 8px;
-}
-.desktop-shortcuts > button:hover {
-  background: #ffffff08;
-}
-.desktop-app-icon {
-  width: 53px;
-  height: 53px;
-  border-radius: 13px;
-  box-shadow:
-    inset 0 1px 1px #fff6,
-    0 6px 16px #0002;
-  background: linear-gradient(145deg, #a9c4b7, #4e7168);
-}
-.desktop-app-icon:has(img) {
-  background: none !important;
-  box-shadow: none;
-}
-.desktop-app-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.desktop-app-icon.icon-settings {
-  background: linear-gradient(140deg, #ccd9d8, #687c83);
-}
-.desktop-app-icon.icon-arcade {
-  background: linear-gradient(140deg, #e6ca94, #987b53);
-}
 .desktop-colophon {
   position: absolute;
   left: 5vw;
@@ -365,11 +320,27 @@ select {
 #dock .dock-symbol.icon-settings {
   background: linear-gradient(140deg, #ccd9d8, #687c83) !important;
 }
-.dock-label {
+#dock .dock-label {
+  left: 50%;
+  bottom: calc(100% + 17px);
+  transform: translate(-50%, 4px);
+  visibility: hidden;
+  transition:
+    opacity 0.14s,
+    transform 0.14s,
+    visibility 0.14s;
+  line-height: 1.3;
+  box-shadow: 0 4px 14px #0003;
   background: #25332fed;
   border-color: #ffffff20;
   color: #e2eee5;
   font-size: 11px;
+}
+#dock .dock-item:hover .dock-label,
+#dock .dock-icon:focus-visible + .dock-label {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
 }
 .desktop-window {
   border: 1px solid #a6b9b329 !important;
@@ -1033,13 +1004,17 @@ select {
   }
   .studio-desktop {
     inset: 40px 0 82px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 16px 7vw 0;
   }
   .desktop-clock {
-    top: 29px;
-    left: 7vw;
+    position: static;
   }
   .desktop-clock time {
-    font-size: 42px;
+    font-size: clamp(30px, 5dvh, 42px);
+    margin-top: 8px;
   }
   .desktop-clock > span {
     font-size: 8px;
@@ -1048,13 +1023,13 @@ select {
     font-size: 10px;
   }
   .studio-desktop .desktop-greeting {
-    left: 7vw;
-    bottom: 30%;
-    max-width: 90%;
+    position: static;
+    align-self: center;
+    max-width: 100%;
   }
   .studio-desktop .desktop-greeting h1 {
-    font-size: clamp(56px, 14vw, 83px);
-    margin: 17px 0;
+    font-size: clamp(38px, min(12vw, 7.5dvh), 68px);
+    margin: clamp(10px, 1.5dvh, 17px) 0;
   }
   .studio-desktop .desktop-greeting p {
     font-size: 11px;
@@ -1069,28 +1044,12 @@ select {
     padding: 10px 13px;
     gap: 12px;
   }
-  .studio-desktop .desktop-shortcuts {
-    left: 7vw;
-    right: 7vw;
-    bottom: 18px;
-    top: auto;
+  .studio-desktop .desktop-music {
+    position: relative;
+    inset: auto;
     transform: none;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 3px;
-    justify-content: space-between;
-  }
-  .desktop-shortcuts > button {
-    font-size: 9px;
-    gap: 7px;
-    padding: 3px;
-  }
-  .desktop-app-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-  }
-  .desktop-app-icon svg {
-    width: 23px;
+    width: 100%;
+    max-height: min(310px, 38dvh);
   }
   .desktop-colophon {
     display: none;
@@ -1099,7 +1058,7 @@ select {
     bottom: 9px;
   }
   #dock .dock-container {
-    gap: 10px;
+    gap: 8px;
     padding: 8px 11px 4px;
     border-radius: 16px;
   }
@@ -1191,26 +1150,14 @@ select {
 }
 @media (max-width: 380px) {
   #dock .dock-container {
-    gap: 7px;
+    gap: 6px;
+    padding-left: 7px;
+    padding-right: 7px;
   }
   #dock .dock-icon,
   #dock .dock-icon img {
-    width: 32px;
-    height: 32px;
-  }
-  .studio-desktop .desktop-shortcuts {
-    left: 4vw;
-    right: 4vw;
-  }
-  .desktop-app-icon {
-    width: 35px;
-    height: 35px;
-  }
-  .desktop-shortcuts > button {
-    font-size: 8px;
-  }
-  .studio-desktop .desktop-greeting h1 {
-    font-size: 56px;
+    width: clamp(28px, 8.5vw, 32px);
+    height: clamp(28px, 8.5vw, 32px);
   }
 }
 @media (max-height: 650px) and (min-width: 768px) {
@@ -1230,21 +1177,20 @@ select {
   .desktop-actions {
     margin-top: 18px;
   }
-  .studio-desktop .desktop-shortcuts {
-    gap: 20px 10px;
-  }
-  .desktop-app-icon {
-    width: 46px;
-    height: 46px;
-  }
 }
-@media (max-height: 550px) {
+@media (max-height: 550px) and (min-width: 600px) {
+  .studio-desktop {
+    display: block;
+    padding: 0;
+  }
   .desktop-clock {
     display: none;
   }
   .studio-desktop .desktop-greeting {
+    position: absolute;
+    left: 4vw;
     bottom: 15%;
-    max-width: 50%;
+    max-width: calc(92% - 295px);
   }
   .studio-desktop .desktop-greeting h1 {
     font-size: 46px;
@@ -1262,20 +1208,45 @@ select {
   .desktop-actions button {
     padding: 8px 12px;
   }
-  .studio-desktop .desktop-shortcuts {
+  .studio-desktop .desktop-music {
+    position: absolute;
     left: auto;
-    right: 5vw;
+    right: 4vw;
     bottom: auto;
     top: 50%;
     transform: translateY(-50%);
-    grid-template-columns: repeat(3, 60px);
-    gap: 10px 5px;
-  }
-  .desktop-app-icon {
-    width: 37px;
-    height: 37px;
+    width: 265px;
+    max-height: calc(100% - 8px);
   }
   .desktop-colophon {
+    display: none;
+  }
+}
+@media (max-height: 700px) and (max-width: 599px) {
+  .studio-desktop {
+    padding-top: 12px;
+  }
+  .desktop-clock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .desktop-clock > span {
+    display: none;
+  }
+  .desktop-clock time,
+  .desktop-clock p {
+    margin: 0;
+  }
+  .studio-desktop .desktop-music {
+    max-height: min(280px, 43dvh);
+  }
+}
+@media (max-height: 600px) and (max-width: 599px) {
+  .studio-desktop {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .desktop-clock {
     display: none;
   }
 }
@@ -1287,8 +1258,7 @@ select {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
-  .photo-tile:hover,
-  .desktop-shortcuts button:hover .desktop-app-icon {
+  .photo-tile:hover {
     transform: none;
   }
 }

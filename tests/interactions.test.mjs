@@ -92,7 +92,7 @@ await build({
               domElement = document.createElement('canvas'); debug = {};
               setPixelRatio() {} setSize() {} forceContextLoss() {}
               render(scene) { const u = scene.children[0].material.uniforms;
-                wallpaperRenders.push({ time: u.time.value, sky: u.sky.value.getHexString(), sun: u.sunlight.value, meteor: u.meteorOpacity.value, particles: scene.children[1].visible }); }
+                wallpaperRenders.push({ time: u.time.value, sky: u.sky.value.getHexString(), sun: u.sunlight.value, meteor: u.meteorOpacity.value, mirror: u.mirror.value, particles: scene.children[1].visible }); }
               dispose() { wallpaperDisposals++; }
             }`,
           loader: 'js',
@@ -417,6 +417,15 @@ test('wallpaper stops in the background, resumes without a time jump and release
   const ui = render(h(app.LivingScene, props))
   await advance(1)
   const first = app.wallpaperRenders.at(-1)
+  assert.equal(first.mirror, true)
+  ui.rerender(
+    h(app.LivingScene, {
+      ...props,
+      options: { ...props.options, flipHorizontal: false },
+    }),
+  )
+  assert.equal(app.wallpaperRenders.at(-1).mirror, false)
+  assert.equal(app.wallpaperRenders.at(-1).time, first.time)
   assert.equal(first.sky, '040917')
   assert.equal(first.particles, false)
   assert.ok(first.time > 0.8 && first.time < 1.1)
@@ -436,6 +445,35 @@ test('wallpaper stops in the background, resumes without a time jump and release
   const stopped = app.wallpaperRenders.length
   await advance(1)
   assert.equal(app.wallpaperRenders.length, stopped)
+})
+
+test('mirror preference persists without replacing an existing photo landscape or seasonal choices', async () => {
+  localStorage.setItem(
+    'macfolio-appearance',
+    JSON.stringify({
+      version: 4,
+      state: {
+        scene: 'landscape',
+        time: 'manual',
+        manualHour: 18.5,
+        seasonMode: 'autumn',
+        hemisphere: 'south',
+        atmosphere: false,
+      },
+    }),
+  )
+  await app.useAppearance.persist.rehydrate()
+  assert.equal(app.useAppearance.getState().scene, 'landscape')
+  assert.equal(app.useAppearance.getState().manualHour, 18.5)
+  assert.equal(app.useAppearance.getState().seasonMode, 'autumn')
+  assert.equal(app.useAppearance.getState().hemisphere, 'south')
+  assert.equal(app.useAppearance.getState().atmosphere, false)
+  assert.equal(app.useAppearance.getState().flipHorizontal, true)
+  app.useWindowStore.getState().openWindow('settings')
+  const ui = render(h(app.Settings))
+  fireEvent.click(ui.getByRole('switch', { name: /Mirror the landscape/ }))
+  await act(() => app.useAppearance.persist.rehydrate())
+  assert.equal(app.useAppearance.getState().flipHorizontal, false)
 })
 
 test('static wallpaper applies time and season changes immediately without animating meteors', () => {

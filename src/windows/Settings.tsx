@@ -119,6 +119,18 @@ function Settings() {
           <h3>Motion & seasons</h3>
           <label>
             <span>
+              <strong>Mirror the landscape</strong>
+              <small>Swap the left and right of your backdrop.</small>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={prefs.flipHorizontal}
+              onChange={(e) => set({ flipHorizontal: e.target.checked })}
+            />
+          </label>
+          <label>
+            <span>
               <strong>Living scenery</strong>
               <small>
                 Water, starlight and drifting seasons. Respects reduced motion.

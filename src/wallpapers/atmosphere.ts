@@ -22,11 +22,11 @@ export function meteorAt(time: number, aspect = 1) {
     aspect <= 0
   )
     return null
-  const slot = Math.floor(time / 18),
+  const slot = Math.floor(time / 12),
     seed = slot + 42,
-    delay = 3 + random(seed) * 7
+    delay = 2 + random(seed) * 4
   const duration = 0.85 + random(seed + 1) * 0.55,
-    age = time - slot * 18 - delay
+    age = time - slot * 12 - delay
   if (age < 0 || age > duration) return null
   const x = (random(seed + 2) * 0.64 - 0.36) * aspect,
     y = 0.82 + random(seed + 3) * 0.15

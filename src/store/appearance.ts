@@ -18,6 +18,7 @@ export type AppearancePreferences = {
   seasonMode: SeasonMode
   hemisphere: Hemisphere
   lowData: boolean
+  flipHorizontal: boolean
 }
 
 const defaults: AppearancePreferences = {
@@ -31,6 +32,7 @@ const defaults: AppearancePreferences = {
   seasonMode: 'auto',
   hemisphere: 'north',
   lowData: false,
+  flipHorizontal: true,
 }
 const scenes: SceneId[] = [
   'living',
@@ -60,9 +62,9 @@ export const useAppearance = create<AppearanceStore>()(
     }),
     {
       name: 'macfolio-appearance',
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => safeStorage),
-      migrate: (persisted: unknown) => {
+      migrate: (persisted: unknown, version) => {
         const value = (persisted ?? {}) as Record<string, unknown>
         if ('mode' in value) {
           const oldMode = value.mode
@@ -88,7 +90,8 @@ export const useAppearance = create<AppearanceStore>()(
         }
         return {
           ...value,
-          scene: value.scene === 'landscape' ? 'living' : value.scene,
+          scene:
+            version < 4 && value.scene === 'landscape' ? 'living' : value.scene,
         }
       },
       merge: (persisted, current) => {
@@ -127,6 +130,10 @@ export const useAppearance = create<AppearanceStore>()(
             : 'auto',
           hemisphere: value.hemisphere === 'south' ? 'south' : 'north',
           lowData: value.lowData === true,
+          flipHorizontal:
+            typeof value.flipHorizontal === 'boolean'
+              ? value.flipHorizontal
+              : defaults.flipHorizontal,
         }
       },
     },

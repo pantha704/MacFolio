@@ -32,8 +32,9 @@ test('meteors have a straight constant-speed head and a trailing wake', () => {
   }
 })
 
-test('meteor events are occasional, finite and fade at both ends', () => {
+test('meteor events start 8–16 seconds apart, stay finite and fade at both ends', () => {
   const events = []
+  const starts = []
   let event = null
   for (let tick = 0; tick < 36000; tick++) {
     const meteor = meteorAt(tick / 100, 16 / 9)
@@ -45,11 +46,16 @@ test('meteor events are occasional, finite and fade at both ends', () => {
       if (!event) {
         event = []
         events.push(event)
+        starts.push(tick / 100)
       }
       event.push(meteor)
     } else event = null
   }
-  assert.equal(events.length, 20)
+  assert.equal(events.length, 30)
+  for (let i = 1; i < starts.length; i++) {
+    const gap = starts[i] - starts[i - 1]
+    assert.ok(gap >= 7.99 && gap <= 16.01)
+  }
   for (const track of events) {
     assert.ok(track.length >= 85 && track.length <= 141)
     assert.ok(track[0].opacity < 0.03)

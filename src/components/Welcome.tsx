@@ -1,6 +1,6 @@
 import { ArrowUpRight, Moon, Sun } from 'lucide-react'
 import { useWindowStore } from '#store/useWindowStore'
-import { desktopApps } from '../desktop/appRegistry'
+import DesktopMusic from './DesktopMusic'
 import { profile } from '../data/portfolio'
 import { useLocalClock } from '../hooks/useLocalClock'
 export default function Welcome() {
@@ -44,20 +44,7 @@ export default function Welcome() {
           </button>
         </div>
       </div>
-      <nav className="desktop-shortcuts" aria-label="Desktop apps">
-        {desktopApps.map(({ id, name, icon, desktopIcon: Icon }) => (
-          <button key={id} onClick={() => open(id)}>
-            <span className={`desktop-app-icon icon-${id}`}>
-              {icon ? (
-                <img src={`/images/${icon}`} alt="" draggable={false} />
-              ) : Icon ? (
-                <Icon size={27} />
-              ) : null}
-            </span>
-            <span>{id === 'finder' ? 'My work' : name}</span>
-          </button>
-        ))}
-      </nav>
+      <DesktopMusic />
       <div className="desktop-colophon">
         <span>MADE TO BE EXPLORED</span>
         <span>⌘ / Ctrl K to search · Alt W to close</span>
