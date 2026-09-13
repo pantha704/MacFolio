@@ -27,7 +27,7 @@ const defaults: AppearancePreferences = {
   manualPhase: 'day',
   manualHour: 12,
   motion: 'subtle',
-  seasonal: false,
+  seasonal: true,
   atmosphere: true,
   seasonMode: 'auto',
   hemisphere: 'north',
@@ -62,7 +62,7 @@ export const useAppearance = create<AppearanceStore>()(
     }),
     {
       name: 'macfolio-appearance',
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => safeStorage),
       migrate: (persisted: unknown, version) => {
         const value = (persisted ?? {}) as Record<string, unknown>
@@ -84,12 +84,13 @@ export const useAppearance = create<AppearanceStore>()(
               ? phaseHours[oldMode as Phase]
               : 12,
             motion: value.motion === false ? 'still' : 'subtle',
-            seasonal: value.seasonal === true,
+            seasonal: true,
             hemisphere: value.south === true ? 'south' : 'north',
           } satisfies AppearancePreferences
         }
         return {
           ...value,
+          seasonal: version < 6 ? true : value.seasonal,
           scene:
             version < 4 && value.scene === 'landscape' ? 'living' : value.scene,
         }

@@ -1,4 +1,4 @@
-export type SpotifySource = { title: string; url: string }
+export type SpotifySource = { title: string; url: string; artist?: string }
 export type AudioTrack = {
   id: string
   title: string

@@ -1,62 +1,62 @@
-# Listening room
+# Stillwater record player
 
-The right-side app shortcuts have been replaced by a persistent music card. All apps remain in the Dock. Music starts after visitor interaction; opening or minimizing an app does not unload the local audio player.
+The large desktop card has become a floating vinyl record and metallic tonearm. Press the record to play or pause. The arm settles over the groove and the disc spins only while audio is actually playing; buffering, pause and failures return it to rest. Reduced-motion preferences disable rotation and arm movement.
 
-No default songs or playlist have been supplied yet. The card invites visitors to choose music until the owner configures a public selection.
+The shelf button opens the collection. Previous/next controls move through the current source’s queue. Native audio’s seek, volume and repeat controls live under Playback settings.
 
-## Publish a Spotify selection
+## Default rotation
 
-Edit `src/data/music.ts` and set `featuredSpotify` to your public track, album, artist or playlist URL:
+Every visitor starts with these public Spotify selections, without autoplay:
 
-```ts
-export const featuredSpotify: SpotifySource | null = {
-  title: 'My evening rotation',
-  url: 'PASTE_YOUR_SPOTIFY_SHARE_LINK_HERE',
-}
-```
+| Title               | Artist             | Spotify track                                         |
+| ------------------- | ------------------ | ----------------------------------------------------- |
+| Mondstadt Nighttime | Chewie Melodies    | https://open.spotify.com/track/12sYej7eevoDbZc2JNc77B |
+| Choral Chambers     | Christopher Larkin | https://open.spotify.com/track/5CCGtH9xGsace3C5sb6jC7 |
+| in the sea          | kensuke ushio      | https://open.spotify.com/track/3pFPWe9ZYmOFzSKBbSBUVD |
 
-Use Spotify’s **Share → Copy link** option, not an iframe HTML snippet. Publish the code change to make this the default for visitors. No API key or OAuth setup is required. Until a valid URL is supplied, the local music view remains available.
+Edit the `featuredSpotify` array in `src/data/music.ts` to change the public rotation. Entries have `title`, `artist` (optional), and a canonical public Spotify `url`.
 
-The card loads Spotify’s official embed only when **Load Spotify player** is pressed. Spotify controls playback, and embeds may offer only previews depending on the browser/session and content. **Open Spotify** is always available. This integration does not use the Web Playback SDK, which requires Spotify Premium.
+## Personal collection
 
-The real terminal needs the existing cross-origin isolation headers in `vercel.json`. Keep them. On an isolated page, supported browsers use a credentialless iframe; this has separate storage/cookies, so an existing Spotify sign-in is not shared. Browsers without that support offer the external Spotify link and local-file playback instead. Do not weaken the terminal headers to force an embed.
+Visitors can add Spotify track, album, artist and playlist links with optional names. Up to 100 personal bookmarks and the selected Spotify entry are saved under `macfolio-music-collection` in localStorage. This is a local record shelf; it does not create or modify playlists in a Spotify account.
 
-Links saved through **Choose music** are personal preferences in that visitor’s browser. They do not change the owner’s public playlist or publish anything to Spotify. Invalid URLs, lookalike domains, unsupported content types and pasted HTML are rejected.
+The three defaults remain available alongside personal additions. Canonical URLs are deduplicated, pasted markup and unsafe URLs are rejected, and older single-link preferences migrate automatically. Removing a personal entry persists across refreshes. Corrupt storage falls back to the default rotation. If storage is blocked or full, selections remain usable for the visit and a message explains that saving failed.
 
-## Publish full audio tracks
+No Spotify audio, credentials or visitor identity is stored. Local audio files are separate and last for the page visit.
 
-For full playback with the custom controls, use audio you are allowed to publish. Put the files in `public/music/`, then edit the queue in `src/data/music.ts`:
+## Official Spotify playback
 
-```ts
-export const featuredTracks: AudioTrack[] = [
-  {
-    id: 'evening-demo',
-    title: 'Evening Demo',
-    artist: 'Your artist name',
-    src: '/music/evening-demo.mp3',
-  },
-]
-```
+Spotify loads only after a visitor chooses Play. Its unmodified player appears in a small panel beside the record (above it on portrait phones). The official iFrame API reports playback state to the disc. Close the Spotify panel to stop and unload it.
 
-This example requires the actual file. The repository does not include placeholder or downloaded commercial songs. Prefer same-origin files so playback works with the terminal’s isolation headers. Files are served by the existing hosting project; there is no new music-service subscription, although normal hosting transfer limits still apply.
+Spotify determines availability and preview length. A full-track, ad-free experience is not guaranteed. If the browser declines programmatic playback, the record stays still and asks the visitor to use Spotify’s visible Play control. Retry and Open Spotify remain available after a failed connection. Album/playlist sequencing belongs to Spotify; individual selections advance only when the provider reports completion.
 
-The first configured track is selected without autoplay. If both a Spotify default and a file queue are configured, the card initially shows Spotify; **Choose music** also lists the file queue.
+There is no API key, OAuth setup, paid Web Playback SDK or new backend. No commercial songs are downloaded or rehosted.
 
-## Listen to files on this device
+### Terminal compatibility
 
-Open **Choose music → Add audio**, or drop audio into the dialog. Files are not uploaded and last for this page visit. Supported browser codecs include common MP3, M4A, Ogg, WAV and FLAC files. Imports are capped at 50 tracks and 100 MB per file; duplicates are ignored. A codec or damaged-file failure produces a recoverable message.
+The desktop still uses COOP `same-origin` and COEP `require-corp` for the real WebContainer terminal. Only `/spotify-player.html` has a COEP `unsafe-none` exception and is excluded from the SPA rewrite. The same route distinction exists in Vite development/preview and Vercel production configuration.
 
-The local player supports play/pause, previous/next, seeking after metadata loads, volume, queue repeat and removal. Adding more files preserves current playback. Switching to Spotify stops local playback; switching back removes the Spotify iframe. Removing a local file or unmounting the player releases its object URL. No files are downloaded from Spotify.
+This helper loads the official Spotify iFrame API in a credentialless child on supporting isolated browsers. Parent/child messages validate the window, origin and per-frame session. It does not use Spotify’s private message protocol. Obsolete frames cannot update the new selection.
+
+Credentialless embeds do not share the visitor’s normal Spotify cookies. On isolated browsers without credentialless iframe support, Open Spotify and native local-file playback remain available. Keep the main desktop isolation headers intact on any alternate host.
+
+## Full local audio
+
+Choose Add audio or drop files into the shelf. Files are not uploaded and are available for this page visit. Imports accept browser-supported MP3, M4A, Ogg, WAV, FLAC and other audio formats, capped at 50 tracks and 100 MB each. Duplicate files are ignored. Unsupported codecs and damaged files produce a recoverable message.
+
+The player supports play/pause, previous/next, seeking after metadata loads, volume, queue repeat and removal. Adding music preserves current playback. Choosing a different source stops the previous one. Removing files or unmounting releases their object URLs; stale media events and rejected play promises cannot restart a previous source.
+
+For public full-length tracks, put audio you are allowed to publish in `public/music/` and add entries to `featuredTracks` in `src/data/music.ts` with `id`, `title`, `artist` and same-origin `src` (for example `/music/evening.mp3`). Actual files are required; there are no placeholder downloads.
 
 ## Verification
 
-Automated DOM tests mock the audio API and verify queue behavior, source handoff, stale playback events/rejections, seek/volume state, error recovery, dialog keyboard isolation, preference persistence, iframe capability checks and file cleanup. They do not prove actual audio output, codec support, browser autoplay behavior or Spotify’s service availability.
+Automated tests cover saved collections, migration, validation, duplicates, blocked storage, default selections, native queues and cleanup, playback-driven animation, source handoff, stale frame/media events, retry, Spotify SDK intent/readiness/timeout handling, and desktop isolation configuration.
 
-Before release, try an actual MP3 and a real public Spotify playlist in desktop Chrome, Safari, Firefox and an Android/iOS browser. Test an interrupted network, end-of-queue, source switching, device volume, background playback, and the compact portrait/landscape layouts. Confirm that Terminal still boots under the unchanged response headers.
+Audio and Spotify are mocked in these tests. Actual sound, codec support, provider availability, iframe/autoplay behavior and device layouts still need live browser acceptance. Verify the tonearm, playback, queue completion, interrupted connections and local files on desktop and mobile, and confirm Terminal still boots with Spotify open.
 
 References:
 
-- [Spotify: creating an embed](https://developer.spotify.com/documentation/embeds/tutorials/creating-an-embed)
-- [Spotify: troubleshooting embeds and previews](https://developer.spotify.com/documentation/embeds/tutorials/troubleshooting)
-- [Spotify: Web Playback SDK requirements](https://developer.spotify.com/documentation/web-playback-sdk/tutorials/getting-started)
-- [MDN: credentialless iframes](https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/credentialless)
+- [Spotify iFrame API](https://developer.spotify.com/documentation/embeds/references/iframe-api)
+- [Spotify embed troubleshooting](https://developer.spotify.com/documentation/embeds/tutorials/troubleshooting)
+- [Spotify widget requirements](https://developer.spotify.com/documentation/embeds/terms)
+- [MDN credentialless iframes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/IFrame_credentialless)

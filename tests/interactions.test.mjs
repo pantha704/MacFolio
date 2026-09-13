@@ -92,7 +92,7 @@ await build({
               domElement = document.createElement('canvas'); debug = {};
               setPixelRatio() {} setSize() {} forceContextLoss() {}
               render(scene) { const u = scene.children[0].material.uniforms;
-                wallpaperRenders.push({ time: u.time.value, sky: u.sky.value.getHexString(), sun: u.sunlight.value, meteor: u.meteorOpacity.value, mirror: u.mirror.value, particles: scene.children[1].visible }); }
+                wallpaperRenders.push({ time: u.time.value, sky: u.sky.value.getHexString(), sun: u.sunlight.value, meteor: u.meteorOpacity.value, mirror: u.mirror.value, seasons: u.seasonWeights.value.toArray(), particles: scene.children[1].visible }); }
               dispose() { wallpaperDisposals++; }
             }`,
           loader: 'js',
@@ -512,6 +512,83 @@ test('static wallpaper applies time and season changes immediately without anima
     }),
   )
   assert.equal(app.wallpaperRenders.at(-1).particles, false)
+  for (const [index, season] of [
+    'spring',
+    'summer',
+    'autumn',
+    'winter',
+  ].entries()) {
+    ui.rerender(
+      h(app.LivingScene, {
+        ...props,
+        options: { ...props.options, hour: 12, season, particles: season },
+      }),
+    )
+    const actual = app.wallpaperRenders.at(-1)
+    assert.deepEqual(
+      actual.seasons,
+      [0, 1, 2, 3].map((value) => (value === index ? 1 : 0)),
+    )
+    assert.equal(actual.particles, true)
+    assert.equal(actual.time, 0)
+  }
+  ui.rerender(
+    h(app.LivingScene, {
+      ...props,
+      options: {
+        ...props.options,
+        hour: 0,
+        season: 'winter',
+        particles: 'winter',
+      },
+    }),
+  )
+  assert.equal(
+    app.wallpaperRenders.at(-1).particles,
+    true,
+    'winter snowfall remains visible at night',
+  )
+  ui.rerender(
+    h(app.LivingScene, {
+      ...props,
+      options: { ...props.options, hour: 0, season: 'winter', particles: null },
+    }),
+  )
+  assert.equal(app.wallpaperRenders.at(-1).particles, false)
+})
+
+test('old muted palettes migrate to full seasonal colours; explicit season choice enables both landscape and atmosphere', async () => {
+  localStorage.setItem(
+    'macfolio-appearance',
+    JSON.stringify({
+      version: 5,
+      state: {
+        scene: 'living',
+        seasonal: false,
+        atmosphere: false,
+        motion: 'still',
+        hemisphere: 'south',
+        manualHour: 17,
+      },
+    }),
+  )
+  await app.useAppearance.persist.rehydrate()
+  assert.equal(app.useAppearance.getState().seasonal, true)
+  assert.equal(app.useAppearance.getState().motion, 'still')
+  assert.equal(app.useAppearance.getState().hemisphere, 'south')
+  assert.equal(app.useAppearance.getState().atmosphere, false)
+  app.useWindowStore.getState().openWindow('settings')
+  const ui = render(h(app.Settings))
+  fireEvent.change(ui.getByLabelText('Season'), { target: { value: 'winter' } })
+  assert.equal(app.useAppearance.getState().atmosphere, true)
+  assert.equal(app.useAppearance.getState().seasonal, true)
+  fireEvent.click(ui.getByRole('switch', { name: /Seasonal palette/ }))
+  await act(() => app.useAppearance.persist.rehydrate())
+  assert.equal(
+    app.useAppearance.getState().seasonal,
+    false,
+    'new choices to disable the palette are respected',
+  )
 })
 
 test('Arcade keyboard tabs and shifted steering release work during boost', async () => {

@@ -21,7 +21,7 @@ export function createSeasonalParticles() {
   ).setUsage(THREE.DynamicDrawUsage)
   geometry.setAttribute('aOffset', offsets)
   geometry.setAttribute('aDetail', detail)
-  const weights = new THREE.Vector4(),
+  const weights = new THREE.Vector4(0, 0, 0, 0),
     target = new THREE.Vector4()
   const uniforms = {
     viewport: { value: new THREE.Vector2(1440, 900) },
@@ -36,12 +36,16 @@ export function createSeasonalParticles() {
     depthWrite: false,
     vertexShader: /* glsl */ `
   attribute vec4 aOffset; attribute vec4 aDetail;
-  uniform vec2 viewport; uniform float time;
+  uniform vec2 viewport; uniform float time; uniform vec4 weights;
   varying vec2 vUv; varying float alpha; varying float variation;
   void main(){
    vUv=uv;alpha=aDetail.x;variation=aDetail.y;
-   float angle=aOffset.w,c=cos(angle),s=sin(angle);
-   vec2 p=position.xy; p.x*=.45+.55*abs(cos(time*(1.+variation)+variation*20.));
+   float butterfly=weights.y*step(.87,variation);
+   float angle=mix(aOffset.w,sin(time*1.3+variation*20.)*.25,butterfly),c=cos(angle),s=sin(angle);
+   vec2 p=position.xy;
+   float flutter=.42+.58*abs(cos(time*(1.+variation)+variation*20.));
+   flutter=mix(flutter,.25+.75*abs(sin(time*9.+variation*30.)),butterfly);
+   p.x*=mix(flutter,1.,weights.w);
    p=mat2(c,-s,s,c)*p;
    vec2 centre=aOffset.xy*2.-1.;
    gl_Position=vec4(centre+p*aOffset.z/viewport*2.,0.,1.);
@@ -67,12 +71,35 @@ export function createSeasonalParticles() {
    float branches=1.-smoothstep(.015,.04,abs(fract((p.y-abs(p.x)*.7)*3.5+.5)-.5));
    vec3 brown=mix(vec3(.48,.18,.055),vec3(.78,.43,.14),variation);
    brown*=1.-vein*.24-branches*.10;
-   float pollen=1.-smoothstep(.03,.22,length(p));
-   float snow=1.-smoothstep(.04,.18,length(p));
-   float opacity=petal*weights.x+pollen*weights.y+oak*weights.z+snow*weights.w;
+   // Summer has veined green leaves and an occasional little butterfly.
+   float leafWidth=.54*pow(max(0.,1.-abs(p.y)/.87),.72);
+   float leaf=(1.-smoothstep(leafWidth-aa,leafWidth+aa,abs(p.x)))*(1.-smoothstep(.84,.90,abs(p.y)));
+   vec3 green=mix(vec3(.37,.65,.24),vec3(.66,.79,.37),variation);
+   green*=1.-vein*.20-branches*.09;
+   vec2 wing=vec2(abs(p.x),p.y);
+   float upper=1.-smoothstep(.85,1.,length((wing-vec2(.39,.28))/vec2(.43,.49)));
+   float lower=1.-smoothstep(.85,1.,length((wing-vec2(.29,-.32))/vec2(.30,.34)));
+   float wings=max(upper,lower);
+   float body=(1.-smoothstep(.035,.065,abs(p.x)))*(1.-smoothstep(.43,.62,abs(p.y)));
+   vec3 wingColour=mix(vec3(.98,.80,.39),vec3(.99,.94,.79),variation);
+   wingColour=mix(wingColour,vec3(.24,.22,.15),body);
+   float summer=mix(leaf,max(wings,body),step(.87,variation));
+   vec3 summerColour=mix(green,wingColour,step(.87,variation));
+   // Six delicate arms plus a few softer flakes: snow reads as snow at screen size.
+   float radius=length(p),angle=atan(p.y,p.x);
+   float sector=mod(angle+3.141593/6.,3.141593/3.)-3.141593/6.;
+   vec2 ray=vec2(cos(sector),sin(sector))*radius;
+   float arms=(1.-smoothstep(.025,.025+aa,abs(ray.y)))*(1.-smoothstep(.64,.70,ray.x));
+   float twig=abs(abs(ray.y)-(ray.x-.29)*.65);
+   float twigs=(1.-smoothstep(.024,.024+aa,twig))*smoothstep(.27,.32,ray.x)*(1.-smoothstep(.48,.55,ray.x));
+   float crystal=max(arms,twigs);
+   float soft=1.-smoothstep(.12,.42,radius);
+   float snow=mix(crystal,soft,step(.65,variation));
+   float opacity=petal*weights.x+summer*weights.y+oak*weights.z+snow*weights.w;
    if(opacity<.002)discard;
-   vec3 colour=(pink*petal*weights.x+vec3(.94,.86,.57)*pollen*weights.y+brown*oak*weights.z+vec3(.80,.88,.96)*snow*weights.w)/max(opacity,.001);
-   gl_FragColor=sRGBTransferEOTF(vec4(colour,opacity*alpha*daylight));
+   vec3 colour=(pink*petal*weights.x+summerColour*summer*weights.y+brown*oak*weights.z+vec3(.95,.98,1.)*snow*weights.w)/max(opacity,.001);
+   float visibility=mix(daylight,max(.38,daylight),weights.w);
+   gl_FragColor=sRGBTransferEOTF(vec4(colour,opacity*min(.88,alpha*(1.+weights.w*.5))*visibility));
    #include <colorspace_fragment>
   }
  `,
@@ -102,13 +129,29 @@ export function createSeasonalParticles() {
       for (let i = 0; i < geometry.instanceCount; i++) {
         for (let j = 0; j < 4; j++) seed[j] = seeds[i * 4 + j]
         const p = driftAt(seed, time)
-        offsets.setXYZW(i, p.x, p.y, p.size, p.angle)
+        const butterfly = seed[3] > 0.87 ? weights.y : 0
+        const flutterX =
+          -0.08 +
+          ((seed[2] + time * 0.013) % 1) * 1.16 +
+          Math.sin(time * 0.8 + seed[0] * 20) * 0.012
+        const flutterY =
+          -0.12 +
+          ((seed[0] + time * 0.008) % 1) * 1.24 +
+          Math.sin(time * 0.65 + seed[1] * 20) * 0.02
+        offsets.setXYZW(
+          i,
+          THREE.MathUtils.lerp(p.x, flutterX, butterfly),
+          THREE.MathUtils.lerp(p.y, flutterY, butterfly),
+          p.size * (1 + weights.w * 0.18 + butterfly * 0.45),
+          p.angle,
+        )
         detail.setXYZW(i, p.opacity, seed[3], 0, 0)
       }
       offsets.needsUpdate = true
       detail.needsUpdate = true
       mesh.visible =
-        uniforms.daylight.value > 0.002 && weights.lengthSq() > 0.0001
+        (uniforms.daylight.value > 0.002 || weights.w > 0.002) &&
+        weights.lengthSq() > 0.0001
     },
     dispose() {
       geometry.dispose()

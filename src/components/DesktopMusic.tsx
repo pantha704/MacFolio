@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Disc3,
   ExternalLink,
-  Headphones,
-  Music2,
+  ListMusic,
   Pause,
   Play,
   Plus,
   Repeat2,
   SkipBack,
   SkipForward,
+  SlidersHorizontal,
   Trash2,
   Volume2,
   X,
@@ -23,31 +22,17 @@ import {
   type AudioTrack,
   type SpotifySource,
 } from '../music/sources'
-import { safeSave, safeStorage } from '../utils/storage'
+import {
+  readCollection,
+  saveCollection,
+  type MusicCollection,
+} from '../music/collection'
+import SpotifyPlayer, {
+  type PlaybackIntent,
+  type SpotifyPlayback,
+} from '../music/SpotifyPlayer'
 import '../music/music.css'
 
-function readSpotify(): SpotifySource | null {
-  try {
-    const saved = JSON.parse(
-      safeStorage.getItem('macfolio-music-spotify') ?? 'null',
-    )
-    if (
-      saved &&
-      typeof saved.title === 'string' &&
-      typeof saved.url === 'string' &&
-      spotifySource(saved.url)
-    )
-      return {
-        title: saved.title.slice(0, 80),
-        url: spotifySource(saved.url)!.url,
-      }
-  } catch {
-    /* A corrupt preference does not prevent local playback. */
-  }
-  return featuredSpotify && spotifySource(featuredSpotify.url)
-    ? featuredSpotify
-    : null
-}
 function LibraryDialog({
   children,
   onClose,
@@ -57,8 +42,8 @@ function LibraryDialog({
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null
-    const node = dialog.current
+    const previous = document.activeElement as HTMLElement | null,
+      node = dialog.current
     node?.showModal()
     return () => {
       node?.close()
@@ -79,8 +64,8 @@ function LibraryDialog({
     >
       <header>
         <div>
-          <span className="music-eyebrow">MAKE YOURSELF AT HOME</span>
-          <h2 id="music-library-title">Your soundtrack.</h2>
+          <span className="music-eyebrow">A SOUNDTRACK FOR THE VIEW</span>
+          <h2 id="music-library-title">The record shelf.</h2>
         </div>
         <button onClick={onClose} aria-label="Close music library">
           <X size={19} />
@@ -92,21 +77,124 @@ function LibraryDialog({
   )
 }
 
+function Record({
+  playing,
+  busy,
+  onPlay,
+}: {
+  playing: boolean
+  busy: boolean
+  onPlay: () => void
+}) {
+  const metal = useId()
+  return (
+    <div className="turntable">
+      <button
+        className="record-button"
+        onClick={onPlay}
+        aria-label={playing || busy ? 'Pause music' : 'Play music'}
+      >
+        <span className="vinyl" aria-hidden="true">
+          <span className="record-label">
+            <span>STILLWATER</span>
+            <i />
+            <small>SIDE A · 33⅓</small>
+          </span>
+        </span>
+        <span className="record-action" aria-hidden="true">
+          {playing || busy ? (
+            <Pause size={19} fill="currentColor" />
+          ) : (
+            <Play size={19} fill="currentColor" />
+          )}
+        </span>
+      </button>
+      <svg className="tonearm" viewBox="0 0 180 190" aria-hidden="true">
+        <defs>
+          <linearGradient id={metal} x1="0" x2="1">
+            <stop offset="0" stopColor="#75838a" />
+            <stop offset=".32" stopColor="#ecede8" />
+            <stop offset=".56" stopColor="#afb9bb" />
+            <stop offset=".8" stopColor="#f8f4e9" />
+            <stop offset="1" stopColor="#677880" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx="153"
+          cy="27"
+          r="14"
+          fill="#101d24"
+          stroke="#d4e1dd"
+          strokeOpacity=".18"
+        />
+        <g className="tonearm-moving">
+          <rect
+            x="146"
+            y="10"
+            width="14"
+            height="23"
+            rx="4"
+            fill={`url(#${metal})`}
+            stroke="#263b43"
+          />
+          <path
+            d="M153 27V96Q153 108 144 117L121 141"
+            fill="none"
+            stroke="#0a1218"
+            strokeWidth="8"
+          />
+          <path
+            d="M153 27V96Q153 108 144 117L121 141"
+            fill="none"
+            stroke={`url(#${metal})`}
+            strokeWidth="5"
+          />
+          <path d="M121 140l-8 12" stroke="#d2d4c7" strokeWidth="2" />
+          <rect
+            x="116"
+            y="131"
+            width="10"
+            height="22"
+            rx="2"
+            transform="rotate(36 121 141)"
+            fill="#27353b"
+            stroke="#a6b5b7"
+            strokeWidth="1.5"
+          />
+        </g>
+        <circle
+          cx="153"
+          cy="27"
+          r="8"
+          fill={`url(#${metal})`}
+          stroke="#40515a"
+        />
+        <circle cx="153" cy="27" r="2.5" fill="#46585e" />
+      </svg>
+    </div>
+  )
+}
+
 export default function DesktopMusic() {
   const audio = useRef<HTMLAudioElement>(null),
     picker = useRef<HTMLInputElement>(null)
   const urls = useRef(new Set<string>()),
     request = useRef({ version: 0, active: false })
+  const spotifyPlayed = useRef(false)
   const [tracks, setTracks] = useState<AudioTrack[]>(featuredTracks)
   const [selected, setSelected] = useState<string | null>(
     featuredTracks[0]?.id ?? null,
   )
-  const [spotify, setSpotify] = useState(readSpotify)
-  const [source, setSource] = useState<'files' | 'spotify'>(() =>
-    spotify ? 'spotify' : 'files',
-  )
+  const [collection, setCollection] = useState(readCollection)
+  const [source, setSource] = useState<'files' | 'spotify'>('spotify')
   const [connected, setConnected] = useState(false),
-    [library, setLibrary] = useState(false)
+    [library, setLibrary] = useState(false),
+    [details, setDetails] = useState(false)
+  const [intent, setIntent] = useState<PlaybackIntent>({
+      serial: 0,
+      play: false,
+    }),
+    [revision, setRevision] = useState(0)
   const [playing, setPlaying] = useState(false),
     [busy, setBusy] = useState(false)
   const [position, setPosition] = useState(0),
@@ -114,12 +202,17 @@ export default function DesktopMusic() {
     [volume, setVolume] = useState(0.65)
   const [repeat, setRepeat] = useState(false),
     [notice, setNotice] = useState('')
-  const [link, setLink] = useState(spotify?.url ?? ''),
-    [title, setTitle] = useState(spotify?.title ?? '')
+  const [link, setLink] = useState(''),
+    [title, setTitle] = useState('')
   const track = tracks.find((item) => item.id === selected)
-  const entity = spotify ? spotifySource(spotify.url) : null
+  const spotifyQueue = [...featuredSpotify, ...collection.items]
+  const spotify =
+    spotifyQueue.find((item) => item.url === collection.selected) ??
+    featuredSpotify[0]
+  const current = source === 'spotify' ? spotify : track
   const isolated = globalThis.crossOriginIsolated === true
   const canEmbed = !isolated || 'credentialless' in HTMLIFrameElement.prototype
+
   useEffect(() => {
     const player = audio.current,
       owned = urls.current,
@@ -135,12 +228,23 @@ export default function DesktopMusic() {
       owned.clear()
     }
   }, [])
-  const stop = () => {
+  const persist = (next: MusicCollection) => {
+    setCollection(next)
+    if (!saveCollection(next))
+      setNotice(
+        'Available for this visit. Your browser could not save the collection.',
+      )
+  }
+  const stopLocal = () => {
     request.current.version++
     request.current.active = false
     audio.current?.pause()
     setPlaying(false)
     setBusy(false)
+  }
+  const stop = () => {
+    stopLocal()
+    setIntent((value) => ({ serial: value.serial + 1, play: false }))
   }
   const play = (item = track) => {
     const player = audio.current
@@ -172,20 +276,68 @@ export default function DesktopMusic() {
       )
     })
   }
-  const skip = (direction: number, automatic = false) => {
-    const index = tracks.findIndex((item) => item.id === selected)
-    if (!tracks.length) return
-    if (automatic && index === tracks.length - 1 && !repeat) {
-      stop()
-      return
+  const playSpotify = (item = spotify) => {
+    stopLocal()
+    setNotice('')
+    spotifyPlayed.current = false
+    setSource('spotify')
+    setDetails(false)
+    setPosition(0)
+    setDuration(0)
+    if (collection.selected !== item.url)
+      persist({ ...collection, selected: item.url })
+    setConnected(true)
+    if (canEmbed) {
+      setBusy(true)
+      setIntent((value) => ({ serial: value.serial + 1, play: true }))
     }
-    play(tracks[(index + direction + tracks.length) % tracks.length])
+  }
+  const skip = (direction: number, automatic = false) => {
+    if (source === 'spotify') {
+      const index = spotifyQueue.findIndex((item) => item.url === spotify.url)
+      if (automatic && index === spotifyQueue.length - 1 && !repeat) {
+        stop()
+        return
+      }
+      playSpotify(
+        spotifyQueue[
+          (index + direction + spotifyQueue.length) % spotifyQueue.length
+        ],
+      )
+    } else {
+      const index = tracks.findIndex((item) => item.id === selected)
+      if (!tracks.length) return
+      if (automatic && index === tracks.length - 1 && !repeat) {
+        stop()
+        return
+      }
+      play(tracks[(index + direction + tracks.length) % tracks.length])
+    }
+  }
+  const spotifyState = (state: SpotifyPlayback) => {
+    setPlaying(state.playing)
+    setBusy(state.buffering)
+    setPosition(state.position)
+    setDuration(state.duration)
+    if (state.playing) spotifyPlayed.current = true
+    if (
+      spotifySource(spotify.url)?.kind === 'track' &&
+      spotifyPlayed.current &&
+      intent.play &&
+      !state.playing &&
+      !state.buffering &&
+      state.duration > 0 &&
+      state.position >= state.duration - 0.25
+    ) {
+      spotifyPlayed.current = false
+      skip(1, true)
+    }
   }
   const addFiles = (files: FileList | File[] | null) => {
     if (!files) return
-    const additions: AudioTrack[] = []
+    const additions: AudioTrack[] = [],
+      existing = new Set(tracks.map((item) => item.id))
     let skipped = 0
-    const existing = new Set(tracks.map((item) => item.id))
     for (const file of Array.from(files)) {
       const id = `${file.name}:${file.size}:${file.lastModified}`
       if (existing.has(id)) continue
@@ -207,30 +359,32 @@ export default function DesktopMusic() {
     if (additions.length) {
       setTracks([...tracks, ...additions])
       if (!selected) setSelected(additions[0].id)
-      if (source === 'spotify') stop()
-      setSource('files')
-      setConnected(false)
+      if (source === 'spotify' && !playing && !busy) {
+        setSource('files')
+        setConnected(false)
+      }
     }
     setNotice(
       skipped
         ? `${skipped} file${skipped === 1 ? '' : 's'} skipped. Choose audio under 100 MB, up to 50 tracks.`
         : additions.length
-          ? playing
-            ? 'Added to your queue.'
-            : 'Music added. Press play when you’re ready.'
+          ? 'Added to your queue. Choose a track when you’re ready.'
           : 'These tracks are already in your queue.',
     )
   }
   const remove = (item: AudioTrack) => {
     const next = tracks.filter((entry) => entry.id !== item.id)
     if (selected === item.id) {
-      stop()
+      if (source === 'files') stop()
       audio.current?.removeAttribute('src')
       audio.current?.load()
       if (audio.current) delete audio.current.dataset.track
       setSelected(next[0]?.id ?? null)
-      setPosition(0)
-      setDuration(0)
+      if (source === 'files') {
+        setPosition(0)
+        setDuration(0)
+        if (!next.length) setSource('spotify')
+      }
     }
     setTracks(next)
     if (urls.current.delete(item.src)) URL.revokeObjectURL(item.src)
@@ -242,193 +396,249 @@ export default function DesktopMusic() {
       setNotice('Paste a Spotify track, album, artist or playlist link.')
       return
     }
+    if (spotifyQueue.some((item) => item.url === parsed.url)) {
+      setNotice('This selection is already on your record shelf.')
+      return
+    }
+    if (collection.items.length >= 100) {
+      setNotice('Your shelf is full. Remove a selection before adding another.')
+      return
+    }
     const next = {
       url: parsed.url,
       title: title.trim().slice(0, 80) || `My Spotify ${parsed.kind}`,
     }
-    setSpotify(next)
-    stop()
-    setSource('spotify')
-    setConnected(false)
-    setLibrary(false)
-    setNotice(
-      safeSave('macfolio-music-spotify', JSON.stringify(next))
-        ? ''
-        : 'Available for this visit. Your browser could not save the link.',
-    )
+    setNotice('Saved to your record shelf.')
+    setLink('')
+    setTitle('')
+    persist({ ...collection, items: [...collection.items, next] })
   }
+  const removeSpotify = (item: SpotifySource) => {
+    if (collection.selected === item.url && source === 'spotify') {
+      stop()
+      setConnected(false)
+    }
+    persist({
+      items: collection.items.filter((entry) => entry.url !== item.url),
+      selected:
+        collection.selected === item.url
+          ? featuredSpotify[0].url
+          : collection.selected,
+    })
+  }
+  const spotifyList = (items: SpotifySource[], removable = false) => (
+    <ol className="music-queue">
+      {items.map((item, i) => (
+        <li
+          key={item.url}
+          className={
+            source === 'spotify' && spotify.url === item.url
+              ? 'is-selected'
+              : ''
+          }
+        >
+          <button
+            onClick={() => {
+              playSpotify(item)
+              setLibrary(false)
+            }}
+            aria-label={`Play ${item.title}`}
+          >
+            <span>{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <strong>{item.title}</strong>
+              <small>
+                {item.artist || `Spotify ${spotifySource(item.url)?.kind}`}
+              </small>
+            </div>
+            <Play size={14} />
+          </button>
+          {removable && (
+            <button
+              aria-label={`Remove ${item.title}`}
+              onClick={() => removeSpotify(item)}
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+        </li>
+      ))}
+    </ol>
+  )
+
   return (
     <>
       <aside
-        className={`desktop-music${playing && source === 'files' ? ' is-playing' : ''}`}
+        className={`desktop-music${playing ? ' is-playing' : ''}${source === 'spotify' && connected ? ' has-spotify' : ''}`}
         aria-label="Music player"
       >
-        <header className="music-card-header">
-          <span>
-            <Headphones size={13} /> LISTENING ROOM
+        <Record
+          playing={playing}
+          busy={busy}
+          onPlay={() =>
+            playing || busy
+              ? stop()
+              : source === 'spotify'
+                ? playSpotify()
+                : play()
+          }
+        />
+        <div className="record-caption">
+          <span className="music-eyebrow">
+            {busy
+              ? 'CONNECTING…'
+              : playing
+                ? 'NOW SPINNING'
+                : 'PRESS THE RECORD TO PLAY'}
           </span>
+          <h2 title={current?.title}>{current?.title || 'A little quiet.'}</h2>
+          <p>
+            {current?.artist ||
+              (source === 'spotify'
+                ? 'Your Spotify selection'
+                : 'Add a favourite to the shelf')}
+          </p>
+        </div>
+        <div className="record-controls">
+          <button
+            onClick={() => skip(-1)}
+            disabled={source === 'files' && tracks.length < 2}
+            aria-label="Previous track"
+          >
+            <SkipBack size={15} />
+          </button>
           <button
             onClick={() => setLibrary(true)}
             aria-label="Choose music"
-            title="Choose music"
+            title="Record shelf"
           >
-            <Plus size={18} />
+            <ListMusic size={19} />
           </button>
-        </header>
-        {source === 'spotify' && entity ? (
-          <div className="music-spotify">
-            <h2>{spotify?.title}</h2>
-            {connected && canEmbed ? (
-              <iframe
-                key={entity.url}
-                {...(isolated ? { credentialless: '' } : {})}
-                src={entity.embed}
-                title={`Spotify player: ${spotify?.title}`}
-                height="152"
-                width="100%"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                allowFullScreen
+          <button
+            onClick={() => skip(1)}
+            disabled={source === 'files' && tracks.length < 2}
+            aria-label="Next track"
+          >
+            <SkipForward size={15} />
+          </button>
+          {source === 'files' && (
+            <button
+              onClick={() => setDetails(!details)}
+              aria-label="Playback settings"
+              aria-expanded={details}
+            >
+              <SlidersHorizontal size={16} />
+            </button>
+          )}
+        </div>
+        {source === 'files' && details && (
+          <div className="record-details">
+            <div className="music-timeline">
+              <input
+                type="range"
+                min={0}
+                max={duration || 0}
+                step={0.1}
+                value={Math.min(position, duration || 0)}
+                disabled={!duration}
+                aria-label="Track position"
+                onChange={(e) => {
+                  if (audio.current && duration) {
+                    audio.current.currentTime = Number(e.target.value)
+                    setPosition(Number(e.target.value))
+                  }
+                }}
               />
-            ) : (
-              <div className="spotify-placeholder">
-                <Disc3 size={34} />
-                <p>A little music for the view.</p>
+              <div>
+                <span>{displayTime(position)}</span>
+                <span>{displayTime(duration)}</span>
+              </div>
+            </div>
+            <div className="music-volume">
+              <Volume2 size={14} />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                aria-label="Music volume"
+                onChange={(e) => {
+                  const value = Number(e.target.value)
+                  setVolume(value)
+                  if (audio.current) audio.current.volume = value
+                }}
+              />
+              <button
+                aria-label="Repeat queue"
+                aria-pressed={repeat}
+                onClick={() => setRepeat(!repeat)}
+              >
+                <Repeat2 size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+        {source === 'spotify' &&
+          connected &&
+          createPortal(
+            <div className="spotify-panel" aria-label="Spotify controls">
+              <div className="spotify-panel-header">
+                <span>LISTEN ON SPOTIFY</span>
+                <button
+                  onClick={() => {
+                    stop()
+                    setConnected(false)
+                    setNotice('')
+                  }}
+                  aria-label="Close Spotify player"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              {!library && notice && (
+                <p className="music-notice" role="status">
+                  {notice}
+                </p>
+              )}
+              {canEmbed ? (
+                <SpotifyPlayer
+                  key={`${spotify.url}:${revision}`}
+                  source={spotify}
+                  intent={intent}
+                  onPlayback={spotifyState}
+                  onNotice={setNotice}
+                />
+              ) : (
+                <p className="music-note">
+                  Listen on Spotify in this browser, or add your own audio
+                  files.
+                </p>
+              )}
+              <div className="spotify-actions">
+                <a href={spotify.url} target="_blank" rel="noopener noreferrer">
+                  Open Spotify <ExternalLink size={12} />
+                </a>
                 {canEmbed && (
                   <button
-                    className="music-primary"
                     onClick={() => {
                       stop()
-                      setConnected(true)
+                      setRevision((value) => value + 1)
+                      playSpotify()
                     }}
                   >
-                    Load Spotify player
+                    Retry
                   </button>
                 )}
               </div>
-            )}
-            <div className="spotify-actions">
-              <a href={entity.url} target="_blank" rel="noopener noreferrer">
-                Open Spotify <ExternalLink size={12} />
-              </a>
-              {connected && (
-                <button onClick={() => setConnected(false)}>Stop player</button>
-              )}
-            </div>
-            <p className="music-note">
-              {canEmbed
-                ? 'Spotify controls playback; previews may be limited.'
-                : 'Listen on Spotify in this browser, or choose your own audio files.'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="music-now">
-              <div className="music-sleeve" aria-hidden="true">
-                <div className="music-record">
-                  <i />
-                  <Music2 size={23} />
-                </div>
-              </div>
-              <div>
-                <span className="music-eyebrow">
-                  {track ? 'YOUR ROTATION' : 'A LITTLE COMPANY'}
-                </span>
-                <h2>{track?.title || 'Stay a little longer.'}</h2>
-                <p>{track?.artist || 'Bring your favourite sounds.'}</p>
-              </div>
-            </div>
-            {track ? (
-              <>
-                <div className="music-timeline">
-                  <input
-                    type="range"
-                    min={0}
-                    max={duration || 0}
-                    step={0.1}
-                    value={Math.min(position, duration || 0)}
-                    disabled={!duration}
-                    aria-label="Track position"
-                    onChange={(e) => {
-                      if (audio.current && duration) {
-                        audio.current.currentTime = Number(e.target.value)
-                        setPosition(Number(e.target.value))
-                      }
-                    }}
-                  />
-                  <div>
-                    <span>{displayTime(position)}</span>
-                    <span>{displayTime(duration)}</span>
-                  </div>
-                </div>
-                <div className="music-controls">
-                  <button
-                    onClick={() => skip(-1)}
-                    disabled={tracks.length < 2}
-                    aria-label="Previous track"
-                  >
-                    <SkipBack size={18} />
-                  </button>
-                  <button
-                    className="music-play"
-                    onClick={() => (playing || busy ? stop() : play())}
-                    aria-label={playing || busy ? 'Pause music' : 'Play music'}
-                  >
-                    {playing || busy ? <Pause size={21} /> : <Play size={21} />}
-                  </button>
-                  <button
-                    onClick={() => skip(1)}
-                    disabled={tracks.length < 2}
-                    aria-label="Next track"
-                  >
-                    <SkipForward size={18} />
-                  </button>
-                </div>
-                <div className="music-volume">
-                  <Volume2 size={14} />
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={volume}
-                    aria-label="Music volume"
-                    onChange={(e) => {
-                      const value = Number(e.target.value)
-                      setVolume(value)
-                      if (audio.current) audio.current.volume = value
-                    }}
-                  />
-                  <button
-                    aria-label="Repeat queue"
-                    aria-pressed={repeat}
-                    onClick={() => setRepeat(!repeat)}
-                  >
-                    <Repeat2 size={16} />
-                  </button>
-                </div>
-              </>
-            ) : (
-              <button
-                className="music-primary music-empty-action"
-                onClick={() => setLibrary(true)}
-              >
-                Choose your music <Plus size={14} />
-              </button>
-            )}
-            <footer className="music-card-footer">
-              <span>
-                {busy
-                  ? 'Loading audio…'
-                  : track
-                    ? `${tracks.length} track${tracks.length === 1 ? '' : 's'} · ${playing ? 'Playing' : 'Ready when you are'}`
-                    : 'Spotify links or your own files'}
-              </span>
-              {track && <button onClick={() => setLibrary(true)}>Queue</button>}
-            </footer>
-          </>
-        )}
-        {!library && notice && (
-          <p className="music-note" role="status">
+              <p className="music-note">
+                Spotify may play previews. Close this panel to stop.
+              </p>
+            </div>,
+            document.body,
+          )}
+        {!library && notice && !(source === 'spotify' && connected) && (
+          <p className="music-notice" role="status">
             {notice}
           </p>
         )}
@@ -445,37 +655,87 @@ export default function DesktopMusic() {
           setPlaying(true)
           setBusy(false)
         }}
-        onPause={() => setPlaying(false)}
-        onWaiting={() => {
-          if (request.current.active) setBusy(true)
+        onPause={() => {
+          if (request.current.active) setPlaying(false)
         }}
-        onCanPlay={() => setBusy(false)}
+        onWaiting={() => {
+          if (request.current.active) {
+            setBusy(true)
+            setPlaying(false)
+          }
+        }}
+        onCanPlay={() => {
+          if (request.current.active) setBusy(false)
+        }}
         onEnded={() => {
           if (request.current.active) skip(1, true)
         }}
-        onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) =>
-          setDuration(
-            Number.isFinite(e.currentTarget.duration)
-              ? e.currentTarget.duration
-              : 0,
-          )
-        }
-        onDurationChange={(e) =>
-          setDuration(
-            Number.isFinite(e.currentTarget.duration)
-              ? e.currentTarget.duration
-              : 0,
-          )
-        }
+        onTimeUpdate={(e) => {
+          if (request.current.active) setPosition(e.currentTarget.currentTime)
+        }}
+        onLoadedMetadata={(e) => {
+          if (request.current.active)
+            setDuration(
+              Number.isFinite(e.currentTarget.duration)
+                ? e.currentTarget.duration
+                : 0,
+            )
+        }}
+        onDurationChange={(e) => {
+          if (request.current.active)
+            setDuration(
+              Number.isFinite(e.currentTarget.duration)
+                ? e.currentTarget.duration
+                : 0,
+            )
+        }}
         onError={() => {
-          if (!request.current.active) return
-          stop()
-          setNotice('This audio could not load. Try another file or format.')
+          if (request.current.active) {
+            stop()
+            setNotice('This audio could not load. Try another file or format.')
+          }
         }}
       />
       {library && (
         <LibraryDialog onClose={() => setLibrary(false)}>
+          <section aria-labelledby="music-featured-title">
+            <h3 id="music-featured-title">Pratham’s rotation</h3>
+            <p>Three little worlds to disappear into.</p>
+            {spotifyList(featuredSpotify)}
+          </section>
+          <section aria-labelledby="music-collection-title">
+            <h3 id="music-collection-title">Your collection</h3>
+            <p>
+              Save Spotify tracks, albums and playlists here. They’ll be waiting
+              in this browser next time.
+            </p>
+            {collection.items.length > 0 && spotifyList(collection.items, true)}
+            <form onSubmit={saveSpotify}>
+              <label>
+                Spotify link
+                <input
+                  type="text"
+                  inputMode="url"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="https://open.spotify.com/playlist/…"
+                  required
+                />
+              </label>
+              <label>
+                Name <span>(optional)</span>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={80}
+                  placeholder="My late-night rotation"
+                />
+              </label>
+              <button className="music-primary" type="submit">
+                <Plus size={14} /> Add to collection
+              </button>
+            </form>
+          </section>
           <section
             className="music-file-section"
             aria-labelledby="music-files-title"
@@ -487,9 +747,10 @@ export default function DesktopMusic() {
           >
             <div className="music-section-title">
               <div>
-                <h3 id="music-files-title">Your files</h3>
+                <h3 id="music-files-title">From your device</h3>
                 <p>
-                  Drop audio here. Files stay on this device for this visit.
+                  Drop audio here. Local files play in full and stay on this
+                  device for this visit.
                 </p>
               </div>
               <button
@@ -511,7 +772,7 @@ export default function DesktopMusic() {
                 e.target.value = ''
               }}
             />
-            {tracks.length ? (
+            {tracks.length > 0 && (
               <ol className="music-queue">
                 {tracks.map((item, i) => (
                   <li
@@ -545,61 +806,19 @@ export default function DesktopMusic() {
                   </li>
                 ))}
               </ol>
-            ) : (
-              <p className="music-note">
-                MP3, M4A, Ogg, WAV and other formats supported by your browser.
-              </p>
             )}
           </section>
-          <section
-            className="music-link-section"
-            aria-labelledby="music-spotify-title"
-          >
-            <h3 id="music-spotify-title">From Spotify</h3>
-            <p>Use a shared track, album, artist or playlist link.</p>
-            <form onSubmit={saveSpotify}>
-              <label>
-                Spotify link
-                <input
-                  type="text"
-                  inputMode="url"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="https://open.spotify.com/playlist/…"
-                  required
-                />
-              </label>
-              <label>
-                Name <span>(optional)</span>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  maxLength={80}
-                  placeholder="My late-night rotation"
-                />
-              </label>
-              <button className="music-primary" type="submit">
-                Use Spotify link
-              </button>
-            </form>
-            {entity && (
-              <button
-                className="music-saved"
-                onClick={() => {
-                  stop()
-                  setSource('spotify')
-                  setLibrary(false)
-                }}
-              >
-                Return to {spotify?.title}
-              </button>
-            )}
-            <p className="music-note">
-              No API key needed. Spotify may offer previews; use Open Spotify
-              for its full listening experience. Your saved link is personal to
-              this browser.
-            </p>
-          </section>
+          <p className="music-note">
+            Spotify loads only when you play a selection. Your saved links stay
+            in this browser.{' '}
+            <a
+              href="https://www.spotify.com/legal/privacy-policy/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Spotify privacy
+            </a>
+          </p>
           {notice && (
             <p className="music-notice" role="status">
               {notice}

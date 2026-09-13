@@ -5,8 +5,8 @@ Pratham Jaiswal’s interactive portfolio, built as a personal desktop with Reac
 ## Experience
 
 - A responsive desktop with a clear introduction, a listening room in place of the side app shortcuts, and every application available in the Dock.
-- Stillwater: a mirrored Three.js coast with textured headlands, pines, drifting mist, waves and restrained sun/star reflections. Continuous local-time lighting, a deep star field and tapered shooting stars. Spring petals, summer motes, autumn oak leaves and winter snow drift during daylight. Settings offer mirror/season previews, hemisphere selection, reduced motion, low power and a static fallback.
-- Music: Spotify embeds and local audio, without a paid API or backend. Local queue, play/pause, skip, seek, volume and repeat controls; files stay on the visitor’s device. Spotify playback can be preview-limited. See [music setup](docs/MUSIC_SETUP.md) to publish your own default selection.
+- Stillwater: a mirrored Three.js coast with distinct seasonal headlands, tiny meadow flowers, drifting mist, blue water and brighter broken sun/star/meteor reflections. Spring brings light greens and cherry petals; summer has grass-green hills, green leaves and butterflies; autumn warms to ochre; winter has white snowfields and six-armed snowflakes, visible at night too. Settings offer local-time lighting, mirror/season previews, hemisphere selection, reduced motion, low power and a static fallback.
+- Music: a compact vinyl record with a metallic tonearm that follows actual playback. Three owner-selected Spotify tracks, a personal collection saved in localStorage, and full local audio with queue, seek, volume and repeat controls. Spotify controls open on demand and playback can be preview-limited. No paid API or backend. See [music setup](docs/MUSIC_SETUP.md).
 - After Hours: 3D Orbit Pinball, Rally Room, and Nightshift. Fixed-step physics, independent touch controls, pause on app switch, and local high scores.
 - Finder with project filtering, project details, source/live links, about information, and résumé access.
 - Spotlight search: use **Command K** or **Control K**, arrow keys, Enter, and Escape.
@@ -39,7 +39,7 @@ npm run lint
 npm run build
 ```
 
-The 55 tests cover physics, meteor trajectories, all-day particle continuity, calendar seasons, day-cycle continuity, wallpaper suspension/cleanup, preference migration, DOM app interactions, music queues and source switching, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock graphics and audio boundaries: they do not verify GPU rendering, audio output or Spotify availability. CI runs these checks on pull requests and pushes to `master`.
+The 64 tests cover physics, meteor trajectories, all-day particle continuity, calendar seasons, day-cycle continuity, wallpaper suspension/cleanup, preference migration, DOM app interactions, music queues and source switching, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock graphics and audio boundaries: they do not verify GPU rendering, audio output or Spotify availability. CI runs these checks on pull requests and pushes to `master`.
 
 The current redesign is awaiting visual/device acceptance. See [Stillwater release verification](docs/STILLWATER_RELEASE.md) for exact coverage and remaining checks.
 
@@ -76,6 +76,6 @@ Removing/resetting gallery items only changes this browser’s collection. It do
 
 ## Deployment
 
-Use the existing Vercel project with build command `npm run build` and output directory `dist`. Preserve `vercel.json`: the real terminal needs its cross-origin isolation headers. Other static hosts must send equivalent headers. The browser, WebContainer runtime, external image provider, and unauthenticated GitHub API impose availability/compatibility limits; the portfolio supplies fallbacks rather than assuming they always work.
+Use the existing Vercel project with build command `npm run build` and output directory `dist`. Preserve `vercel.json`: the real terminal needs its cross-origin isolation headers, with only the Spotify helper document exempted (see the music setup guide). Other static hosts must send equivalent headers. The browser, WebContainer runtime, external image provider, and unauthenticated GitHub API impose availability/compatibility limits; the portfolio supplies fallbacks rather than assuming they always work.
 
 This change does not require a database, new paid service, or a hosting migration. Search metadata and a no-JavaScript contact/résumé fallback are included. The full interactive content is client rendered; static prerendering would be a separate enhancement if search indexing becomes a primary goal.

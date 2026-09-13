@@ -1,13 +1,13 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!spotify-player\\.html$).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/((?!spotify-player\\.html$).*)",
       "headers": [
         {
           "key": "Cross-Origin-Embedder-Policy",
@@ -17,6 +17,12 @@
           "key": "Cross-Origin-Opener-Policy",
           "value": "same-origin"
         }
+      ]
+    },
+    {
+      "source": "/spotify-player.html",
+      "headers": [
+        { "key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none" }
       ]
     }
   ]

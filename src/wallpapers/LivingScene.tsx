@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { daylightAt, localHour } from '../utils/daylight'
-import { meteorAt, type Season } from './atmosphere'
+import { meteorAt, seasons, type Season } from './atmosphere'
 import { createSeasonalParticles } from './SeasonalParticles'
 import { coastalFragment } from './coastalShader'
 export type LivingOptions = {
@@ -61,12 +61,18 @@ export default function LivingScene({
       sunlight: { value: initial.sun },
       time: { value: 0 },
       aspect: { value: 1 },
-      season: { value: 0 },
+      seasonWeights: { value: new THREE.Vector4(0, 0, 0, 0) },
       viewport: { value: new THREE.Vector2(1, 1) },
       meteor: { value: new THREE.Vector4() },
       meteorOpacity: { value: 0 },
       mirror: { value: current.current.flipHorizontal ?? true },
     }
+    if (current.current.season)
+      uniforms.seasonWeights.value.setComponent(
+        seasons.indexOf(current.current.season),
+        1,
+      )
+    const seasonTarget = new THREE.Vector4()
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader:
@@ -130,9 +136,10 @@ export default function LivingScene({
         if (moving) elapsed += Math.min(dt, 0.05)
         uniforms.time.value = elapsed
         uniforms.mirror.value = prefs.flipHorizontal ?? true
-        const seasonalTint =
-          prefs.season === 'autumn' ? 1 : prefs.season === 'winter' ? -1 : 0
-        uniforms.season.value += (seasonalTint - uniforms.season.value) * blend
+        seasonTarget.set(0, 0, 0, 0)
+        if (prefs.season)
+          seasonTarget.setComponent(seasons.indexOf(prefs.season), 1)
+        uniforms.seasonWeights.value.lerp(seasonTarget, blend)
         const shooting = moving
           ? meteorAt(elapsed, uniforms.aspect.value)
           : null

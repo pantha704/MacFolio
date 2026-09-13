@@ -5,7 +5,8 @@
 export const coastalFragment = /* glsl */ `
 varying vec2 vUv;
 uniform vec3 sky; uniform vec3 horizon; uniform vec3 land;
-uniform float time; uniform float sunlight; uniform float aspect; uniform float season;
+uniform float time; uniform float sunlight; uniform float aspect;
+uniform vec4 seasonWeights;
 uniform bool mirror;
 uniform vec2 viewport; uniform vec4 meteor; uniform float meteorOpacity;
 const float seaLevel=.43;
@@ -20,11 +21,16 @@ float ridge(float x,float layer){
   +.016*sin(x*10.3+layer)+.018*terrainNoise(vec2(x*7.,layer*5.));
 }
 vec3 terrainColour(float distance){
- vec3 base=mix(land,horizon*.42,distance);
- vec3 autumn=sRGBTransferEOTF(vec4(.32,.23,.12,1.)).rgb;
- vec3 winter=sRGBTransferEOTF(vec4(.58,.67,.69,1.)).rgb;
- base=mix(base,autumn*(sunlight*.65+.10),max(season,0.)*.35);
- return mix(base,winter*(sunlight*.7+.035),max(-season,0.)*.45);
+ // Full seasonal pigments, not a faint tint over the same grey-green hills.
+ float coverage=dot(seasonWeights,vec4(1.));
+ vec3 pigment=sRGBTransferEOTF(vec4(.58,.73,.38,1.)).rgb*seasonWeights.x
+  +sRGBTransferEOTF(vec4(.33,.59,.28,1.)).rgb*seasonWeights.y
+  +sRGBTransferEOTF(vec4(.76,.44,.22,1.)).rgb*seasonWeights.z
+  +sRGBTransferEOTF(vec4(.96,.98,1.,1.)).rgb*seasonWeights.w;
+ pigment/=max(coverage,.001);
+ vec3 illumination=mix(vec3(.022,.035,.062),vec3(.95,.97,1.),sunlight);
+ vec3 base=mix(land,pigment*illumination,clamp(coverage,0.,1.));
+ return mix(base,horizon*.62,distance*.32);
 }
 vec3 stars(vec2 p,float scale,float density){
  // Keep points resolvable after the reflected sky is compressed into the water.
@@ -75,20 +81,20 @@ vec3 sea(vec2 p,vec2 sunPosition,float night){
  // Fade fine frequencies before they reach the pixel grid: no horizon shimmer.
  float resolved=1.-smoothstep(1.,3.1,fwidth(water.y*37.));
  float wave=swell*.55+crossWave*.30+ripples*.15*resolved;
- vec3 deep=mix(vec3(.0015,.007,.013),vec3(.008,.055,.065),sunlight);
- vec3 shallows=mix(deep,horizon*.26,.62);
+ vec3 deep=mix(vec3(.0015,.008,.022),vec3(.025,.16,.27),sunlight);
+ vec3 shallows=mix(vec3(.009,.024,.052),vec3(.095,.29,.40),sunlight);
  vec3 colour=mix(shallows,deep,smoothstep(0.,.9,depth));
- colour+=vec3(.014,.029,.034)*wave*(.08+.50*sunlight)*(.25+.75*depth);
+ colour+=vec3(.024,.055,.074)*wave*(.08+.50*sunlight)*(.25+.75*depth);
  // Low reflectance with a grazing-angle lift. This never copies the whole sky.
- float fresnel=.06+.15*(1.-depth)*(1.-depth);
+ float fresnel=.04+.09*(1.-depth)*(1.-depth);
  colour=mix(colour,horizon*.40,fresnel);
  float distortion=(swell*.006+crossWave*.003)*(.18+depth);
  float reflectionX=p.x-sunPosition.x+distortion;
- float width=.008+depth*.11;
+ float width=.007+depth*.085;
  float beam=exp(-reflectionX*reflectionX/(width*width));
- float ridgeLight=smoothstep(.18,.9,swell*.55+crossWave*.35+ripples*.10*resolved);
- float glint=beam*(.07+ridgeLight*.72)*(.40+.60*depth)*sunlight;
- colour+=vec3(1.,.72,.37)*glint*.48;
+ float ridgeLight=smoothstep(.28,.80,swell*.55+crossWave*.35+ripples*.10*resolved);
+ float glint=beam*(.025+ridgeLight*1.10)*(.50+.50*depth)*sunlight;
+ colour+=vec3(1.,.81,.51)*glint*.85;
  if(night>.001){
   // Project the entire visible sky into the bay. A plain 2*horizon-y mirror
   // clipped everything above y=.86, including the beginning of most meteors.
@@ -97,15 +103,15 @@ vec3 sea(vec2 p,vec2 sunPosition,float night){
   vec2 reflected=vec2(p.x+distortion*(.30+depth*.35),
    seaLevel+(seaLevel-p.y)/reflectionScale+crossWave*.001*(.3+depth));
   // A short horizontal blur makes little wave glints, not a second sharp sky.
-  float spread=(1.1+depth*1.5)/viewport.y;
-  vec3 lights=nightLights(reflected)*.50;
-  lights+=nightLights(reflected+vec2(spread,0.))*.25;
-  lights+=nightLights(reflected-vec2(spread,0.))*.25;
+  float spread=(.8+depth*1.3)/viewport.y;
+  vec3 lights=nightLights(reflected)*.68;
+  lights+=nightLights(reflected+vec2(spread,0.))*.16;
+  lights+=nightLights(reflected-vec2(spread,0.))*.16;
   float visibleSky=smoothstep(.46,.69,reflected.y)
    *(1.-smoothstep(.99,1.02,reflected.y));
   // Troughs dim the reflection instead of erasing every subpixel star.
-  float waveBreak=.30+.70*smoothstep(-.5,.85,wave);
-  colour+=lights*night*.42*visibleSky*waveBreak;
+  float waveBreak=.60+.40*smoothstep(-.5,.85,wave);
+  colour+=lights*night*.94*visibleSky*waveBreak;
  }
  // A soft, displaced reflection of the distant ridge anchors the coastline.
  float reflectedRidge=2.*seaLevel-ridge(p.x+distortion,0.);
@@ -149,14 +155,19 @@ void main(){
  vec3 headland=terrainColour(.10)*(1.+(texture-.5)*.40);
  headland+=terrainColour(.35)*smoothstep(.56,.76,texture)*.19*sunlight;
  colour=mix(colour,headland,1.-smoothstep(shore-edge,shore+edge,uv.y));
- // Sparse, varied pines on the larger headland. No billboard assets or grid of trees.
- float cell=floor(uv.x*72.),local=fract(uv.x*72.)-.5;
- float seed=hash(vec2(cell,17.)),treeU=(cell+.5)/72.;
- float treeBase=rightShore(treeU),treeHeight=.005+seed*.015;
- float treeY=(uv.y-treeBase)/treeHeight;
- float crown=(1.-smoothstep((1.-treeY)*.29,(1.-treeY)*.29+.09,abs(local)))*step(0.,treeY)*(1.-step(1.,treeY));
- float trees=crown*step(.67,treeU)*step(.31,seed)*step(treeBase,seaLevel-.003);
- colour=mix(colour,terrainColour(0.)*.66,trees*.88);
+ // A few tiny wildflowers nestle in the grass, never along a marching skyline.
+ if((seasonWeights.x+seasonWeights.y)>.001 && uv.y<shore-.012){
+ vec2 meadow=p*38.,cell=floor(meadow);
+ float seed=hash(cell+71.);
+ vec2 flower=(fract(meadow)-(.24+.52*vec2(hash(cell+3.),hash(cell+9.))))*viewport.y/38.;
+ float radius=length(flower),angle=atan(flower.y,flower.x);
+ float petals=1.-smoothstep(1.15,2.25,radius-.48*cos(angle*5.));
+ float flowerMask=petals*step(.975,seed)*smoothstep(.012,.025,shore-uv.y);
+ flowerMask*=(seasonWeights.x+seasonWeights.y)*sunlight;
+ vec3 flowerColour=mix(vec3(.93,.65,.52),vec3(.98,.92,.72),hash(cell+19.));
+ flowerColour=mix(vec3(.73,.42,.08),flowerColour,smoothstep(.3,.8,radius));
+ colour=mix(colour,flowerColour,flowerMask*.85);
+ }
  // Slow mist collects above the waterline instead of sliding the mountains.
  float mistHeight=(uv.y-seaLevel-.012)/.028;
  float mist=exp(-mistHeight*mistHeight)*noise(vec2(x*3.-time*.012,uv.y*12.));

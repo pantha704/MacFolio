@@ -63,6 +63,7 @@ export default function DynamicWallpaper() {
       aria-hidden="true"
       data-phase={phase}
       data-scene={preferences.scene}
+      data-season={preferences.seasonal ? season : undefined}
       data-flipped={preferences.flipHorizontal}
       className={`ambient-wallpaper studio-wallpaper phase-${phase}${living && ready ? ' is-live' : ''}`}
     >

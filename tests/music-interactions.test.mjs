@@ -100,8 +100,26 @@ const saveSpotify = (ui) => {
   fireEvent.change(ui.getByLabelText(/^Name/), {
     target: { value: 'Evening rotation' },
   })
-  fireEvent.click(ui.getByRole('button', { name: 'Use Spotify link' }))
+  fireEvent.click(ui.getByRole('button', { name: 'Add to collection' }))
 }
+const spotifyEvent = (frame, data, overrides = {}) => {
+  const session = new URLSearchParams(new URL(frame.src).hash.slice(1)).get(
+    'session',
+  )
+  fireEvent(
+    window,
+    new dom.window.MessageEvent('message', {
+      origin: window.location.origin,
+      source: frame.contentWindow,
+      data: { channel: 'macfolio-spotify', session, ...data },
+      ...overrides,
+    }),
+  )
+}
+const isSpinning = (ui) =>
+  ui
+    .getByRole('complementary', { name: 'Music player' })
+    .classList.contains('is-playing')
 beforeEach(() => {
   Object.defineProperty(globalThis, 'crossOriginIsolated', {
     value: false,
@@ -132,7 +150,7 @@ test('local queue imports, plays, seeks, changes volume and advances without aut
     second,
     new File(['bad'], 'image.png', { type: 'image/png' }),
   ])
-  assert.equal(ui.getAllByRole('listitem').length, 2)
+  assert.equal(ui.getAllByRole('listitem').length, 5) // Three curated tracks plus the local queue.
   assert.match(ui.getByRole('status').textContent, /1 file skipped/)
   assert.equal(played.length, 0)
   fireEvent.click(ui.getByRole('button', { name: 'Play First song' }))
@@ -142,6 +160,7 @@ test('local queue imports, plays, seeks, changes volume and advances without aut
   assert.equal(player.paused, false)
   Object.defineProperty(player, 'duration', { value: 180, configurable: true })
   fireEvent.loadedMetadata(player)
+  fireEvent.click(ui.getByRole('button', { name: 'Playback settings' }))
   fireEvent.change(ui.getByLabelText('Track position'), {
     target: { value: 42 },
   })
@@ -153,6 +172,7 @@ test('local queue imports, plays, seeks, changes volume and advances without aut
   assert.equal(player.volume, 0.25)
   fireEvent.click(ui.getByRole('button', { name: 'Pause music' }))
   assert.equal(player.paused, true)
+  assert.equal(isSpinning(ui), false)
   fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
   fireEvent.ended(player)
   assert.ok(ui.getByRole('heading', { name: 'Second' }))
@@ -188,7 +208,7 @@ test('adding to a playing queue preserves playback; removal and unmount release 
   assert.equal(new Set(revoked).size, 2)
 })
 
-test('switching to Spotify stops audio, loads only on request, persists its link and stops on return to files', () => {
+test('saving to the shelf preserves playback; choosing Spotify stops local audio and persists multiple links', () => {
   const ui = render(h(DesktopMusic))
   openLibrary(ui)
   importFiles(ui, [file('First.mp3')])
@@ -196,8 +216,10 @@ test('switching to Spotify stops audio, loads only on request, persists its link
   openLibrary(ui)
   saveSpotify(ui)
   const player = ui.container.querySelector('audio')
+  assert.equal(player.paused, false)
+  assert.equal(document.querySelector('iframe'), null)
+  fireEvent.click(ui.getByRole('button', { name: 'Play Evening rotation' }))
   assert.equal(player.paused, true)
-  assert.equal(ui.container.querySelector('iframe'), null)
   // An event already queued by the old audio source must not restart it over Spotify.
   const before = played.length
   fireEvent.ended(player)
@@ -205,25 +227,55 @@ test('switching to Spotify stops audio, loads only on request, persists its link
   fireEvent.playing(player)
   assert.equal(played.length, before)
   assert.equal(player.paused, true)
-  fireEvent.click(ui.getByRole('button', { name: 'Load Spotify player' }))
   const embed = ui.getByTitle('Spotify player: Evening rotation')
+  assert.equal(new URL(embed.src).pathname, '/spotify-player.html')
   assert.equal(
-    embed.getAttribute('src'),
-    link.replace('/playlist/', '/embed/playlist/') + '?theme=0',
+    new URLSearchParams(new URL(embed.src).hash.slice(1)).get('uri'),
+    `spotify:playlist:${'a'.repeat(22)}`,
   )
   assert.match(embed.getAttribute('allow'), /encrypted-media/)
+  spotifyEvent(embed, {
+    type: 'playback',
+    paused: false,
+    buffering: false,
+    duration: 30000,
+    position: 29000,
+  })
+  spotifyEvent(embed, {
+    type: 'playback',
+    paused: true,
+    buffering: false,
+    duration: 30000,
+    position: 30000,
+  })
   assert.equal(
-    JSON.parse(localStorage.getItem('macfolio-music-spotify')).url,
+    ui.getByTitle('Spotify player: Evening rotation'),
+    embed,
+    'a playlist manages its own track sequencing',
+  )
+  assert.equal(
+    JSON.parse(localStorage.getItem('macfolio-music-collection')).items[0].url,
     link,
   )
   openLibrary(ui)
   fireEvent.click(ui.getByRole('button', { name: 'Play First' }))
-  assert.equal(ui.container.querySelector('iframe'), null)
+  assert.equal(document.querySelector('iframe'), null)
   assert.equal(player.paused, false)
+  openLibrary(ui)
+  fireEvent.change(ui.getByLabelText('Spotify link'), {
+    target: { value: `spotify:album:${'b'.repeat(22)}` },
+  })
+  fireEvent.click(ui.getByRole('button', { name: 'Add to collection' }))
+  assert.equal(
+    JSON.parse(localStorage.getItem('macfolio-music-collection')).items.length,
+    2,
+  )
   ui.unmount()
   const reload = render(h(DesktopMusic))
   assert.ok(reload.getByRole('heading', { name: 'Evening rotation' }))
-  assert.equal(reload.container.querySelector('iframe'), null)
+  assert.equal(document.querySelector('iframe'), null)
+  openLibrary(reload)
+  assert.equal(reload.getAllByRole('listitem').length, 5)
 })
 
 test('isolated browsers use credentialless embeds when supported and an external fallback otherwise', () => {
@@ -236,10 +288,9 @@ test('isolated browsers use credentialless embeds when supported and an external
     JSON.stringify({ title: 'Saved playlist', url: link }),
   )
   const unsupported = render(h(DesktopMusic))
-  assert.equal(
-    unsupported.queryByRole('button', { name: 'Load Spotify player' }),
-    null,
-  )
+  fireEvent.click(unsupported.getByRole('button', { name: 'Play music' }))
+  assert.equal(document.querySelector('iframe'), null)
+  assert.equal(isSpinning(unsupported), false)
   assert.equal(
     unsupported.getByRole('link', { name: /Open Spotify/ }).href,
     link,
@@ -250,9 +301,7 @@ test('isolated browsers use credentialless embeds when supported and an external
     configurable: true,
   })
   const supported = render(h(DesktopMusic))
-  fireEvent.click(
-    supported.getByRole('button', { name: 'Load Spotify player' }),
-  )
+  fireEvent.click(supported.getByRole('button', { name: 'Play music' }))
   assert.equal(
     supported
       .getByTitle('Spotify player: Saved playlist')
@@ -268,7 +317,7 @@ test('invalid sources and blocked playback give actionable errors, and obsolete 
   fireEvent.change(ui.getByLabelText('Spotify link'), {
     target: { value: 'javascript:alert(1)' },
   })
-  fireEvent.click(ui.getByRole('button', { name: 'Use Spotify link' }))
+  fireEvent.click(ui.getByRole('button', { name: 'Add to collection' }))
   assert.match(ui.getByRole('status').textContent, /Paste a Spotify/)
   importFiles(ui, [file('First.mp3'), file('Second.mp3')])
   nextPlayback = () =>
@@ -310,4 +359,130 @@ test('music library contains desktop shortcuts and returns focus when dismissed'
   assert.equal(ui.queryByRole('dialog'), null)
   assert.equal(document.activeElement, trigger)
   window.removeEventListener('keydown', onKey)
+})
+
+test('Spotify record animation follows authenticated frame playback, buffering and pause events', () => {
+  const ui = render(h(DesktopMusic))
+  assert.equal(document.querySelector('iframe'), null)
+  assert.equal(isSpinning(ui), false)
+  fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
+  const frame = ui.getByTitle('Spotify player: Mondstadt Nighttime')
+  assert.equal(isSpinning(ui), false, 'loading must not pretend to play')
+  const state = {
+    type: 'playback',
+    paused: false,
+    buffering: false,
+    position: 2000,
+    duration: 30000,
+  }
+  spotifyEvent(frame, state, { origin: 'https://untrusted.test' })
+  spotifyEvent(frame, state, { source: window })
+  spotifyEvent(frame, { ...state, session: 'obsolete' })
+  assert.equal(isSpinning(ui), false)
+  spotifyEvent(frame, state)
+  assert.equal(isSpinning(ui), true)
+  spotifyEvent(frame, { ...state, buffering: true })
+  assert.equal(isSpinning(ui), false)
+  spotifyEvent(frame, state)
+  assert.equal(isSpinning(ui), true)
+  spotifyEvent(frame, { ...state, paused: true })
+  assert.equal(isSpinning(ui), false)
+  spotifyEvent(frame, { type: 'interaction-required' })
+  assert.match(ui.getByRole('status').textContent, /Spotify controls/)
+  assert.ok(ui.getByRole('button', { name: 'Play music' }))
+  spotifyEvent(frame, state)
+  assert.equal(ui.queryByRole('status'), null)
+  fireEvent.click(ui.getByRole('button', { name: 'Close Spotify player' }))
+  assert.equal(document.querySelector('iframe'), null)
+  assert.equal(isSpinning(ui), false)
+})
+
+test('Spotify defaults advance on completion, stale frames cannot restart sound, and retry replaces the failed session', () => {
+  const ui = render(h(DesktopMusic))
+  fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
+  const first = ui.getByTitle('Spotify player: Mondstadt Nighttime')
+  const state = {
+    type: 'playback',
+    paused: false,
+    buffering: false,
+    position: 29000,
+    duration: 30000,
+  }
+  spotifyEvent(first, state)
+  spotifyEvent(first, { ...state, paused: true, position: 30000 })
+  const second = ui.getByTitle('Spotify player: Choral Chambers')
+  assert.equal(isSpinning(ui), false)
+  spotifyEvent(first, state)
+  assert.equal(isSpinning(ui), false)
+  spotifyEvent(second, { type: 'error' })
+  assert.match(ui.getByRole('status').textContent, /could not connect/)
+  fireEvent.click(ui.getByRole('button', { name: 'Retry' }))
+  const retried = ui.getByTitle('Spotify player: Choral Chambers')
+  assert.notEqual(retried, second)
+  assert.notEqual(retried.src, second.src)
+  spotifyEvent(retried, state)
+  assert.equal(isSpinning(ui), true)
+  fireEvent.click(ui.getByRole('button', { name: 'Next track' }))
+  const third = ui.getByTitle('Spotify player: in the sea')
+  spotifyEvent(third, state)
+  spotifyEvent(third, { ...state, paused: true, position: 30000 })
+  assert.ok(ui.getByRole('heading', { name: 'in the sea' }))
+  assert.equal(isSpinning(ui), false)
+})
+
+test('saved collection rejects duplicates and corruption, and removal survives reload', () => {
+  localStorage.setItem(
+    'macfolio-music-collection',
+    JSON.stringify({
+      items: [
+        { title: 'Unsafe', url: 'javascript:alert(1)' },
+        { title: 'Old favorite', url: link },
+        { title: 'Duplicate', url: `${link}?si=123` },
+        {
+          title: 'Default duplicate',
+          url: 'https://open.spotify.com/track/12sYej7eevoDbZc2JNc77B',
+        },
+      ],
+      selected: 'javascript:alert(1)',
+    }),
+  )
+  const ui = render(h(DesktopMusic))
+  assert.ok(ui.getByRole('heading', { name: 'Mondstadt Nighttime' }))
+  openLibrary(ui)
+  assert.equal(ui.getAllByRole('listitem').length, 4)
+  saveSpotify(ui)
+  assert.match(
+    ui.getByRole('status').textContent,
+    /already on your record shelf/,
+  )
+  fireEvent.click(ui.getByRole('button', { name: 'Remove Old favorite' }))
+  assert.equal(ui.getAllByRole('listitem').length, 3)
+  ui.unmount()
+  const reload = render(h(DesktopMusic))
+  openLibrary(reload)
+  assert.equal(reload.getAllByRole('listitem').length, 3)
+})
+
+test('blocked storage still allows an in-memory collection without claiming it was saved', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem() {
+        throw new Error('disabled')
+      },
+      setItem() {
+        throw new Error('quota')
+      },
+    },
+  })
+  try {
+    const ui = render(h(DesktopMusic))
+    openLibrary(ui)
+    saveSpotify(ui)
+    assert.match(ui.getByRole('status').textContent, /could not save/)
+    assert.ok(ui.getByRole('button', { name: 'Play Evening rotation' }))
+  } finally {
+    Object.defineProperty(globalThis, 'localStorage', descriptor)
+  }
 })

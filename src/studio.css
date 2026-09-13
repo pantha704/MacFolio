@@ -123,6 +123,16 @@ select {
     linear-gradient(90deg, #07151c22, transparent 65%),
     linear-gradient(0deg, #07151c66, transparent 75%);
 }
+.studio-wallpaper.is-live .desktop-scrim {
+  background:
+    linear-gradient(90deg, #07151c1a, transparent 55%),
+    linear-gradient(0deg, #07151c24, transparent 50%);
+}
+/* Dark ink keeps the introduction legible against the snowy daytime headland. */
+body:has(.studio-wallpaper.is-live[data-season='winter'][data-phase='day'])
+  .desktop-greeting {
+  --greeting-ink: #243e50;
+}
 @keyframes studio-fade {
   from {
     opacity: 0;
@@ -220,6 +230,8 @@ select {
   bottom: 12%;
   max-width: calc(90% - 344px);
   text-align: left;
+  color: var(--greeting-ink, #f0f5ef);
+  transition: color 0.8s ease;
 }
 .studio-desktop .desktop-greeting > span {
   font-size: 9px;
@@ -234,7 +246,8 @@ select {
   line-height: 0.94;
   margin: 24px 0;
   text-shadow: none;
-  color: #f3f4e9;
+  color: var(--greeting-ink, #f3f4e9);
+  transition: color 0.8s ease;
 }
 .desktop-greeting h1 em {
   font-family: Georgia, 'Times New Roman', serif;
@@ -247,7 +260,8 @@ select {
   font-size: 13px;
   letter-spacing: 0.015em;
   opacity: 0.7;
-  color: #e1e9e2;
+  color: var(--greeting-ink, #e1e9e2);
+  transition: color 0.8s ease;
 }
 .desktop-actions {
   display: flex;
@@ -1048,8 +1062,9 @@ select {
     position: relative;
     inset: auto;
     transform: none;
-    width: 100%;
-    max-height: min(310px, 38dvh);
+    width: min(330px, 100%);
+    max-height: none;
+    justify-self: end;
   }
   .desktop-colophon {
     display: none;
@@ -1190,7 +1205,7 @@ select {
     position: absolute;
     left: 4vw;
     bottom: 15%;
-    max-width: calc(92% - 295px);
+    max-width: calc(92% - 210px);
   }
   .studio-desktop .desktop-greeting h1 {
     font-size: 46px;
@@ -1215,8 +1230,8 @@ select {
     bottom: auto;
     top: 50%;
     transform: translateY(-50%);
-    width: 265px;
-    max-height: calc(100% - 8px);
+    width: 180px;
+    max-height: none;
   }
   .desktop-colophon {
     display: none;
@@ -1237,9 +1252,6 @@ select {
   .desktop-clock time,
   .desktop-clock p {
     margin: 0;
-  }
-  .studio-desktop .desktop-music {
-    max-height: min(280px, 43dvh);
   }
 }
 @media (max-height: 600px) and (max-width: 599px) {

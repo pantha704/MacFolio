@@ -161,7 +161,8 @@ function Settings() {
             <span>
               <strong>Seasonal atmosphere</strong>
               <small>
-                Daytime blossoms, summer motes, oak leaves or soft snow.
+                Cherry petals, green leaves and butterflies, oak leaves or
+                snowflakes.
               </small>
             </span>
             <input
@@ -184,12 +185,16 @@ function Settings() {
                 aria-describedby="season-help"
                 value={prefs.seasonMode}
                 onChange={(e) =>
-                  set({ seasonMode: e.target.value as SeasonMode })
+                  set({
+                    seasonMode: e.target.value as SeasonMode,
+                    seasonal: true,
+                    atmosphere: true,
+                  })
                 }
               >
                 <option value="auto">Current season</option>
                 <option value="spring">Spring · cherry blossoms</option>
-                <option value="summer">Summer · golden light</option>
+                <option value="summer">Summer · leaves & butterflies</option>
                 <option value="autumn">Autumn · oak leaves</option>
                 <option value="winter">Winter · snowfall</option>
               </select>
@@ -198,7 +203,7 @@ function Settings() {
           <label>
             <span>
               <strong>Seasonal palette</strong>
-              <small>Subtle calendar-based colour changes.</small>
+              <small>Snowy winters, fresh greens and warm autumn hills.</small>
             </span>
             <input
               type="checkbox"
