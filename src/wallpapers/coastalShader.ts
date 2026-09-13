@@ -1,6 +1,7 @@
 // All compositing happens in linear light. Terrain stays still; atmosphere and
 // wave normals move. The water deliberately reflects only a small fraction of
-// the sky, with a separate sun glint and sparse, broken stellar highlights.
+// the sky, with a separate sun glint and broken reflections of the same stars
+// and meteor that are visible overhead. The sky gradient is not reflected.
 export const coastalFragment = /* glsl */ `
 varying vec2 vUv;
 uniform vec3 sky; uniform vec3 horizon; uniform vec3 land;
@@ -26,13 +27,18 @@ vec3 terrainColour(float distance){
  return mix(base,winter*(sunlight*.7+.035),max(-season,0.)*.45);
 }
 vec3 stars(vec2 p,float scale,float density){
+ // Keep points resolvable after the reflected sky is compressed into the water.
+ // Derivatives must be evaluated before the non-uniform empty-cell branch.
+ vec2 footprint=max(fwidth(p)*viewport.y*.75,vec2(.45));
  vec2 grid=p*scale,cell=floor(grid);float seed=hash(cell);
  if(seed<1.-density)return vec3(0.);
  vec2 offset=.18+.64*vec2(hash(cell+17.3),hash(cell+41.9));
- float d=length(fract(grid)-offset)*viewport.y/scale;
+ vec2 delta=(fract(grid)-offset)*viewport.y/scale;
  float radius=mix(.45,1.05,hash(cell+8.));
- float point=exp(-d*d/(radius*radius));
- float halo=exp(-d*d/(radius*radius*8.))*.045;
+ vec2 filtered=delta/max(vec2(radius),footprint);
+ float d2=dot(filtered,filtered);
+ float point=exp(-d2);
+ float halo=exp(-d2/8.)*.045;
  float twinkle=.88+.12*sin(time*(.55+hash(cell+3.))+seed*190.);
  vec3 tint=mix(vec3(.64,.77,1.),vec3(1.,.88,.69),hash(cell+9.));
  return tint*(point+halo)*mix(.12,.65,hash(cell+12.))*twinkle;
@@ -47,6 +53,11 @@ vec3 shootingStar(vec2 p){
  float headDistance=length(p-meteor.xy)*viewport.y;
  float head=exp(-headDistance*headDistance/3.);
  return mix(vec3(.48,.66,1.),vec3(1.,.95,.86),along)*((core+glow)*taper+head*.5)*meteorOpacity;
+}
+// Both the direct sky and the water sample this one field. In particular, a
+// meteor reflection shares its live head, tail and fade, never a separate timer.
+vec3 nightLights(vec2 p){
+ return stars(p,140.,.027)+stars(p+7.1,65.,.017)+shootingStar(p);
 }
 // These two shores leave an open channel, instead of painting hills over the sea.
 float rightShore(float u){
@@ -79,10 +90,22 @@ vec3 sea(vec2 p,vec2 sunPosition,float night){
  float glint=beam*(.07+ridgeLight*.72)*(.40+.60*depth)*sunlight;
  colour+=vec3(1.,.72,.37)*glint*.48;
  if(night>.001){
-  vec2 reflected=vec2(p.x+distortion*2.,2.*seaLevel-p.y+crossWave*.002);
-  vec3 points=stars(reflected+7.1,65.,.017);
-  points+=stars(reflected+7.1+vec2(.002,0.),65.,.017)*.35;
-  colour+=points*night*.16*smoothstep(.1,.65,depth)*smoothstep(-.15,.6,wave);
+  // Project the entire visible sky into the bay. A plain 2*horizon-y mirror
+  // clipped everything above y=.86, including the beginning of most meteors.
+  // The top of the sky lands at y=.07, clear of the bottom edge of the scene.
+  float reflectionScale=(seaLevel-.07)/(1.-seaLevel);
+  vec2 reflected=vec2(p.x+distortion*(.30+depth*.35),
+   seaLevel+(seaLevel-p.y)/reflectionScale+crossWave*.001*(.3+depth));
+  // A short horizontal blur makes little wave glints, not a second sharp sky.
+  float spread=(1.1+depth*1.5)/viewport.y;
+  vec3 lights=nightLights(reflected)*.50;
+  lights+=nightLights(reflected+vec2(spread,0.))*.25;
+  lights+=nightLights(reflected-vec2(spread,0.))*.25;
+  float visibleSky=smoothstep(.46,.69,reflected.y)
+   *(1.-smoothstep(.99,1.02,reflected.y));
+  // Troughs dim the reflection instead of erasing every subpixel star.
+  float waveBreak=.30+.70*smoothstep(-.5,.85,wave);
+  colour+=lights*night*.42*visibleSky*waveBreak;
  }
  // A soft, displaced reflection of the distant ridge anchors the coastline.
  float reflectedRidge=2.*seaLevel-ridge(p.x+distortion,0.);
@@ -104,7 +127,7 @@ void main(){
  if(night>.001){
   float bandDistance=(x*.3+uv.y-.95)*5.;
   colour+=vec3(.002,.0025,.006)*exp(-bandDistance*bandDistance)*noise(p*13.)*night;
-  colour+=(stars(p,140.,.027)+stars(p+7.1,65.,.017)+shootingStar(p))*night*smoothstep(.46,.69,uv.y);
+  colour+=nightLights(p)*night*smoothstep(.46,.69,uv.y);
  }
  // Atmospheric perspective and textured slopes, all anchored to the ground.
  for(int i=2;i>=0;i--){
