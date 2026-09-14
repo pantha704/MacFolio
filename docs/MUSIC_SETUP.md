@@ -38,6 +38,8 @@ The desktop still uses COOP `same-origin` and COEP `require-corp` for the real W
 
 This helper loads the official Spotify iFrame API in a credentialless child on supporting isolated browsers. Parent/child messages validate the window, origin and per-frame session. It does not use Spotify’s private message protocol. Obsolete frames cannot update the new selection.
 
+When the helper becomes ready, the desktop resends the latest play/pause command. Serial numbers make repeated delivery harmless and prevent an older Play from undoing a newer Pause. Successful playback clears its watchdog even when the SDK confirms immediately. Navigation disposes the helper and ignores late callbacks; returning through browser history leaves the record paused, ready for a fresh connection on the next click.
+
 Credentialless embeds do not share the visitor’s normal Spotify cookies. On isolated browsers without credentialless iframe support, Open Spotify and native local-file playback remain available. Keep the main desktop isolation headers intact on any alternate host.
 
 ## Full local audio
@@ -45,6 +47,8 @@ Credentialless embeds do not share the visitor’s normal Spotify cookies. On is
 Choose Add audio or drop files into the shelf. Files are not uploaded and are available for this page visit. Imports accept browser-supported MP3, M4A, Ogg, WAV, FLAC and other audio formats, capped at 50 tracks and 100 MB each. Duplicate files are ignored. Unsupported codecs and damaged files produce a recoverable message.
 
 The player supports play/pause, previous/next, seeking after metadata loads, volume, queue repeat and removal. Adding music preserves current playback. Choosing a different source stops the previous one. Removing files or unmounting releases their object URLs; stale media events and rejected play promises cannot restart a previous source.
+
+Resuming a local track reads its duration and cursor again, so seeking still works when metadata arrived while the track was paused.
 
 For public full-length tracks, put audio you are allowed to publish in `public/music/` and add entries to `featuredTracks` in `src/data/music.ts` with `id`, `title`, `artist` and same-origin `src` (for example `/music/evening.mp3`). Actual files are required; there are no placeholder downloads.
 

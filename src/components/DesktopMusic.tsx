@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ExternalLink,
@@ -246,6 +246,24 @@ export default function DesktopMusic() {
     stopLocal()
     setIntent((value) => ({ serial: value.serial + 1, play: false }))
   }
+  const suspend = useEffectEvent(() => {
+    stop()
+    setConnected(false)
+  })
+  useEffect(() => {
+    const leave = () => suspend()
+    const restore = (event: PageTransitionEvent) => {
+      // A bfcache restore preserves React state, but the helper has disposed its
+      // Spotify controller. Return to a quiet record; the next click reconnects.
+      if (event.persisted) suspend()
+    }
+    window.addEventListener('pagehide', leave)
+    window.addEventListener('pageshow', restore)
+    return () => {
+      window.removeEventListener('pagehide', leave)
+      window.removeEventListener('pageshow', restore)
+    }
+  }, [])
   const play = (item = track) => {
     const player = audio.current
     if (!player || !item) return
@@ -262,7 +280,13 @@ export default function DesktopMusic() {
       player.load()
       setPosition(0)
       setDuration(0)
+    } else {
+      // Metadata can arrive while paused. A resumed source will not necessarily
+      // emit loadedmetadata again, so recover duration and cursor directly.
+      setPosition(Number.isFinite(player.currentTime) ? player.currentTime : 0)
+      setDuration(Number.isFinite(player.duration) ? player.duration : 0)
     }
+    setPlaying(false)
     setBusy(true)
     void player.play().catch((error) => {
       if (request.current.version !== token) return

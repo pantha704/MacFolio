@@ -10,7 +10,7 @@ const code = await readFile(
   'utf8',
 )
 const trackUri = 'spotify:track:12sYej7eevoDbZc2JNc77B'
-function harness(uri = trackUri) {
+function harness(uri = trackUri, onResume) {
   const messages = [],
     listeners = {},
     events = {},
@@ -32,7 +32,10 @@ function harness(uri = trackUri) {
     addListener: (name, callback) => {
       listeners[name] = callback
     },
-    resume: () => resumes++,
+    resume: () => {
+      resumes++
+      onResume?.(listeners)
+    },
     pause: () => pauses++,
     destroy: () => destroyed++,
   }
@@ -57,11 +60,17 @@ function harness(uri = trackUri) {
     clearTimeout: (id) => timers.delete(id),
   }
   vm.runInNewContext(code, context)
-  const command = (type, overrides = {}) =>
+  let serial = 0
+  const command = (type, overrides = {}, revision = ++serial) =>
     events.message({
       source: parent,
       origin: context.location.origin,
-      data: { channel: 'macfolio-spotify', session: 'fixture-session', type },
+      data: {
+        channel: 'macfolio-spotify',
+        session: 'fixture-session',
+        type,
+        serial: revision,
+      },
       ...overrides,
     })
   const boot = () =>
@@ -171,4 +180,52 @@ test('Spotify load failures and teardown clear all adapter timers', () => {
   disposed.listeners.ready()
   disposed.events.pagehide()
   assert.equal(disposed.timers.size, 0)
+})
+
+test('ready/load redelivery is idempotent and obsolete play cannot undo a newer pause', () => {
+  const h = harness()
+  h.command('play', {}, 1)
+  h.boot()
+  h.listeners.ready()
+  h.command('play', {}, 1)
+  assert.equal(h.resumes, 1)
+  h.command('pause', {}, 2)
+  const pauses = h.pauses
+  h.command('play', {}, 1)
+  h.command('pause', {}, 2)
+  assert.equal(h.resumes, 1)
+  assert.equal(h.pauses, pauses)
+  assert.equal(h.timers.size, 0)
+  h.command('play', {}, 3)
+  assert.equal(h.resumes, 2)
+})
+
+test('immediate playback confirmation cannot leave a false autoplay warning timer', () => {
+  const h = harness(trackUri, (listeners) => {
+    listeners.playback_update({
+      data: {
+        isPaused: false,
+        isBuffering: false,
+        position: 0,
+        duration: 30000,
+      },
+    })
+  })
+  h.command('play')
+  h.boot()
+  h.listeners.ready()
+  assert.equal(h.messages.at(-1).data.type, 'playback')
+  assert.equal(h.timers.size, 0)
+})
+
+test('a controller that becomes ready after navigation cannot resume a departed page', () => {
+  const h = harness()
+  h.command('play')
+  h.boot()
+  h.events.pagehide()
+  h.listeners.ready()
+  h.command('play')
+  assert.equal(h.resumes, 0)
+  assert.equal(h.destroyed, 1)
+  assert.equal(h.timers.size, 0)
 })

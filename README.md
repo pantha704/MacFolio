@@ -39,7 +39,7 @@ npm run lint
 npm run build
 ```
 
-The 64 tests cover physics, meteor trajectories, all-day particle continuity, calendar seasons, day-cycle continuity, wallpaper suspension/cleanup, preference migration, DOM app interactions, music queues and source switching, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock graphics and audio boundaries: they do not verify GPU rendering, audio output or Spotify availability. CI runs these checks on pull requests and pushes to `master`.
+The 70 tests cover physics, meteor trajectories, all-day particle continuity, calendar seasons, day-cycle continuity, wallpaper suspension/cleanup, preference migration, DOM app interactions, music queues and source switching, delayed Spotify readiness, playback recovery after navigation, window bounds/state, safe URL routing, and corrupted/blocked storage. DOM tests mock graphics and audio boundaries: they do not verify GPU rendering, audio output or Spotify availability. CI runs these checks on pull requests and pushes to `master`.
 
 The current redesign is awaiting visual/device acceptance. See [Stillwater release verification](docs/STILLWATER_RELEASE.md) for exact coverage and remaining checks.
 

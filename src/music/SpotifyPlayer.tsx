@@ -35,10 +35,12 @@ export default function SpotifyPlayer({
       {
         channel: 'macfolio-spotify',
         session,
+        serial: intent.serial,
         type: intent.play ? 'play' : 'pause',
       },
       window.location.origin,
     )
+  const deliverLatestIntent = useEffectEvent(sendIntent)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,6 +66,9 @@ export default function SpotifyPlayer({
       if (data.type === 'ready') {
         clearTimeout(timer)
         handleNotice('')
+        // The helper may initialize before its iframe load event, or after an
+        // earlier postMessage was lost. Redelivery is deduplicated by serial.
+        deliverLatestIntent()
       } else if (
         data.type === 'playback' &&
         typeof data.paused === 'boolean' &&
@@ -106,14 +111,7 @@ export default function SpotifyPlayer({
     }
   }, [session])
   useEffect(() => {
-    frame.current?.contentWindow?.postMessage(
-      {
-        channel: 'macfolio-spotify',
-        session,
-        type: intent.play ? 'play' : 'pause',
-      },
-      window.location.origin,
-    )
+    deliverLatestIntent()
   }, [intent, session])
 
   return (

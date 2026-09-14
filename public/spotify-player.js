@@ -15,6 +15,8 @@
   let controller,
     ready = false,
     wanted = false,
+    disposed = false,
+    intentSerial = -1,
     playbackTimer
   const send = (type, data = {}) =>
     parent.postMessage(
@@ -22,19 +24,21 @@
       location.origin,
     )
   const reportError = () => {
+    if (disposed) return
     clearTimeout(loadTimer)
     clearTimeout(playbackTimer)
     send('error')
   }
   const applyIntent = () => {
-    if (!ready || !controller) return
+    if (disposed || !ready || !controller) return
     clearTimeout(playbackTimer)
     try {
       if (wanted) {
-        controller.resume()
         // Autoplay can be declined without an SDK error. Leave the real controls
         // visible, return the arm to rest and let the visitor press Spotify Play.
         playbackTimer = setTimeout(() => send('interaction-required'), 5000)
+        // Arm the timeout first: even an immediate SDK confirmation can clear it.
+        controller.resume()
       } else controller.pause()
     } catch {
       reportError()
@@ -43,32 +47,43 @@
   window.addEventListener('message', (event) => {
     const data = event.data
     if (
+      disposed ||
       event.source !== parent ||
       event.origin !== location.origin ||
       data?.channel !== 'macfolio-spotify' ||
-      data.session !== session
+      data.session !== session ||
+      !Number.isSafeInteger(data.serial) ||
+      data.serial <= intentSerial
     )
       return
     if (data.type === 'play' || data.type === 'pause') {
+      intentSerial = data.serial
       wanted = data.type === 'play'
       applyIntent()
     }
   })
   const loadTimer = setTimeout(reportError, 15000)
   window.onSpotifyIframeApiReady = (api) => {
+    if (disposed) return
     try {
       api.createController(
         document.getElementById('embed'),
         { uri, width: '100%', height: 152 },
         (instance) => {
+          if (disposed) {
+            instance.destroy()
+            return
+          }
           controller = instance
           instance.addListener('ready', () => {
+            if (disposed || ready) return
             clearTimeout(loadTimer)
             ready = true
             send('ready')
             applyIntent()
           })
           instance.addListener('playback_update', (event) => {
+            if (disposed) return
             const state = event.data
             if (
               !state ||
@@ -110,6 +125,7 @@
   window.addEventListener(
     'pagehide',
     () => {
+      disposed = true
       clearTimeout(loadTimer)
       clearTimeout(playbackTimer)
       controller?.destroy()

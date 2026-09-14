@@ -397,6 +397,63 @@ test('Spotify record animation follows authenticated frame playback, buffering a
   assert.equal(isSpinning(ui), false)
 })
 
+test('a delayed Spotify ready handshake receives the latest command without relying on iframe load', () => {
+  const ui = render(h(DesktopMusic))
+  fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
+  const frame = ui.getByTitle('Spotify player: Mondstadt Nighttime'),
+    commands = []
+  frame.contentWindow.postMessage = (data, origin) =>
+    commands.push({ data, origin })
+  spotifyEvent(frame, { type: 'ready' })
+  assert.equal(commands.at(-1)?.data.type, 'play')
+  assert.equal(commands.at(-1).origin, window.location.origin)
+  const playSerial = commands.at(-1).data.serial
+  fireEvent.click(ui.getByRole('button', { name: 'Pause music' }))
+  spotifyEvent(frame, { type: 'ready' })
+  assert.equal(commands.at(-1).data.type, 'pause')
+  assert.ok(commands.at(-1).data.serial > playSerial)
+})
+
+test('resuming a local track recovers metadata received while the record was paused', async () => {
+  const ui = render(h(DesktopMusic))
+  openLibrary(ui)
+  importFiles(ui, [file('Quiet.mp3')])
+  fireEvent.click(ui.getByRole('button', { name: 'Play Quiet' }))
+  const player = ui.container.querySelector('audio')
+  fireEvent.click(ui.getByRole('button', { name: 'Pause music' }))
+  Object.defineProperty(player, 'duration', { value: 180, configurable: true })
+  fireEvent.loadedMetadata(player)
+  fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
+  fireEvent.click(ui.getByRole('button', { name: 'Playback settings' }))
+  assert.equal(ui.getByLabelText('Track position').disabled, false)
+  assert.ok(ui.getByText('3:00'))
+  await act(async () => {})
+})
+
+test('returning from browser history unloads a suspended Spotify session and permits a clean restart', () => {
+  const ui = render(h(DesktopMusic))
+  fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
+  const frame = ui.getByTitle('Spotify player: Mondstadt Nighttime')
+  spotifyEvent(frame, {
+    type: 'playback',
+    paused: false,
+    buffering: false,
+    position: 2000,
+    duration: 30000,
+  })
+  fireEvent(
+    window,
+    new dom.window.PageTransitionEvent('pageshow', { persisted: true }),
+  )
+  assert.equal(document.querySelector('iframe'), null)
+  assert.equal(isSpinning(ui), false)
+  fireEvent.click(ui.getByRole('button', { name: 'Play music' }))
+  assert.notEqual(
+    ui.getByTitle('Spotify player: Mondstadt Nighttime').src,
+    frame.src,
+  )
+})
+
 test('Spotify defaults advance on completion, stale frames cannot restart sound, and retry replaces the failed session', () => {
   const ui = render(h(DesktopMusic))
   fireEvent.click(ui.getByRole('button', { name: 'Play music' }))

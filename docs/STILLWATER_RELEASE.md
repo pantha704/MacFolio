@@ -1,6 +1,6 @@
 # Stillwater redesign — release verification
 
-Date: 2026-09-13. Status: implementation complete; visual/device acceptance pending.
+Date: 2026-09-14. Status: implementation complete; visual/device acceptance pending.
 
 ## Design and behavior
 
@@ -38,10 +38,12 @@ The seasonal refinement uses full pigments rather than low-strength tints: light
 - Photos uses a varied, rotated masonry collection. Undo restores image position, favorite, photo wallpaper and the previous automatic/manual time preference. Wallpaper state accounts for the current scene.
 - GitHub profile/repositories render before optional stars finish loading. Failed star refreshes preserve the last loaded collection. Timeouts, partial-data warnings, refresh errors and full-collection links are explicit.
 - The real WebContainer/xterm shell remains the default. Restoring/focusing Terminal refits and focuses the shell. Unexpected shell-exit rejection produces a retry state.
+- Spotify readiness redelivers the latest play/pause intent. Command serials reject duplicates and older intents; an immediate playback confirmation clears the autoplay watchdog. Disposed controllers ignore late callbacks. Browser-history restoration leaves a paused record that can reconnect on demand.
+- Native audio recovers duration/cursor metadata when resuming a paused source, keeping seeking available even if metadata arrived during the pause. A new play request rests the record while loading.
 
 ## Verified automatically
 
-`npm test`: 64 passed. `npm run build`: passed. `npm run lint`: no errors or rule warnings. `git diff --check`: passed.
+`npm test`: 70 passed. `npm run build`: passed. `npm run lint`: no errors or rule warnings. `git diff --check`: passed.
 
 Tests cover equivalent simulation results at 30/60/120 display FPS; stalled-frame bounds; actual bumper/paddle points; life loss/game over; boost/brake behavior; road bounds; collision immunity; finite long-run state; pause/resume/restart/app switch; day-cycle continuity including midnight; all 1,440 minute values; legacy/corrupt preferences; Finder navigation; photo deletion/Undo; photo scene switching; shared window controls; Spotlight focus; partial GitHub loading; safe browser URLs; blocked storage; window geometry and z-order.
 
