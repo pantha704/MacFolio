@@ -1,165 +1,430 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  Pause,
+  Play,
+  RotateCcw,
+  ArrowLeft,
+  ArrowRight,
+  Zap,
+} from 'lucide-react'
 import WindowWrapper from '#hoc/WindowWrapper'
 import WindowControls from '#components/WindowControls'
 import { useWindowStore } from '#store/useWindowStore'
 import { safeStorage } from '../utils/storage'
-
-type Game = 'pinball' | 'pong' | 'racer'
-type GamePhase = 'ready' | 'playing' | 'paused' | 'gameover'
-const gameNames: Record<Game, string> = { pinball: 'Pocket Pinball', pong: 'Paddle Club', racer: 'Midnight Ride' }
-
-const Arcade = () => {
-  const [game, setGame] = useState<Game>('pinball')
-  const [phase, setPhase] = useState<GamePhase>('ready')
-  const [score, setScore] = useState(0)
-  const [best, setBest] = useState(() => Math.max(0, Number(safeStorage.getItem('arcade-pinball')) || 0))
-  const [lives, setLives] = useState(3)
-  const canvas = useRef<HTMLCanvasElement>(null)
-  const keys = useRef(new Set<string>())
-  const phaseRef = useRef<GamePhase>('ready')
-  const frameRef = useRef(0)
-  const drawRef = useRef<((stamp: number) => void) | null>(null)
-  const resetRef = useRef<(() => void) | null>(null)
-  const active = useWindowStore(state => state.focusedWindow === 'arcade' && !state.windows.arcade.isMinimized)
-  const transition = useCallback((next: GamePhase) => {
-    phaseRef.current = next
-    setPhase(next)
-    cancelAnimationFrame(frameRef.current)
-    frameRef.current = requestAnimationFrame(stamp => drawRef.current?.(stamp))
-  }, [])
-
+import {
+  createGame,
+  emptyInput,
+  fixedStepper,
+  games,
+  stepGame,
+  type GameId,
+  type Input,
+  type Phase,
+} from '../arcade/engine'
+import '../arcade/arcade.css'
+function GameSession({ game }: { game: GameId }) {
+  const state = useRef(createGame(game)),
+    input = useRef(emptyInput()),
+    host = useRef<HTMLDivElement>(null),
+    stage = useRef<HTMLDivElement>(null)
+  const [initialBest] = useState(() => {
+    const saved = Number(safeStorage.getItem(`arcade-${game}`))
+    return Number.isFinite(saved) ? Math.max(0, saved) : 0
+  })
+  const best = useRef(initialBest)
+  const [hud, setHud] = useState({
+    phase: 'ready' as Phase,
+    score: 0,
+    lives: 3,
+    best: initialBest,
+    energy: 100,
+    speed: 0,
+  })
+  const [loaded, setLoaded] = useState(false),
+    [error, setError] = useState(false),
+    [attempt, setAttempt] = useState(0)
+  const publish = () => {
+    const s = state.current
+    best.current = Math.max(best.current, s.score)
+    setHud({
+      phase: s.phase,
+      score: s.score,
+      lives: s.lives,
+      best: best.current,
+      energy: Math.round(s.energy),
+      speed: Math.round(s.speed * 3.6),
+    })
+  }
+  const save = () =>
+    safeStorage.setItem(
+      `arcade-${game}`,
+      String(Math.max(best.current, state.current.score)),
+    )
   useEffect(() => {
-    if (active || phaseRef.current !== 'playing') return
-    let cancelled = false
-    queueMicrotask(() => { if (!cancelled && phaseRef.current === 'playing') transition('paused') })
-    return () => { cancelled = true }
-  }, [active, transition])
-  useEffect(() => {
-    const pause = () => { keys.current.clear(); if (phaseRef.current === 'playing') transition('paused') }
-    const visibility = () => { if (document.hidden) pause() }
-    window.addEventListener('blur', pause)
-    document.addEventListener('visibilitychange', visibility)
-    return () => { window.removeEventListener('blur', pause); document.removeEventListener('visibilitychange', visibility) }
-  }, [transition])
-
-  useEffect(() => {
-    const context = canvas.current?.getContext('2d')
-    if (!context) return
-    const ctx = context
-    let x = 240, y = game === 'racer' ? 410 : 260, vx = 155, vy = -220
-    let player = 240, enemy = 240, elapsed = 0, points = 0, remaining = 3, last = 0
-    let obstacleX = 150, obstacleY = -90, secondX = 330, secondY = -300, invulnerable = 0, lastSurvivalPoint = 0
-    const rect = (x: number, y: number, width: number, height: number, colour: string) => { ctx.fillStyle = colour; ctx.fillRect(x, y, width, height) }
-    const circle = (x: number, y: number, radius: number, colour: string) => { ctx.fillStyle = colour; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill() }
-    const save = () => setBest(current => { const next = Math.max(current, points); safeStorage.setItem(`arcade-${game}`, String(next)); return next })
-    const add = (value: number) => { points += value; setScore(points); save() }
-    const loseLife = () => {
-      remaining -= 1
-      setLives(remaining)
-      if (remaining <= 0) { save(); transition('gameover'); return true }
-      return false
+    let disposed = false,
+      frame = 0,
+      last = 0,
+      lastHud = 0
+    let view:
+      | {
+          draw: (s: ReturnType<typeof createGame>) => void
+          dispose: () => void
+        }
+      | undefined
+    const stepper = fixedStepper()
+    const showHud = () => {
+      const s = state.current
+      best.current = Math.max(best.current, s.score)
+      setHud({
+        phase: s.phase,
+        score: s.score,
+        lives: s.lives,
+        best: best.current,
+        energy: Math.round(s.energy),
+        speed: Math.round(s.speed * 3.6),
+      })
     }
-    const reset = () => {
-      x = 240; y = game === 'racer' ? 410 : 260; vx = 155; vy = -220; player = 240; enemy = 240; elapsed = 0; points = 0; remaining = 3; last = 0
-      obstacleX = 150; obstacleY = -90; secondX = 330; secondY = -300; invulnerable = 0; lastSurvivalPoint = 0
-      keys.current.clear(); setScore(0); setLives(3)
+    const saveBest = () =>
+      safeStorage.setItem(
+        `arcade-${game}`,
+        String(Math.max(best.current, state.current.score)),
+      )
+    const pause = () => {
+      input.current = emptyInput()
+      if (state.current.phase === 'playing') {
+        state.current.phase = 'paused'
+        showHud()
+        saveBest()
+      }
+      stepper.reset()
+      last = 0
     }
-    resetRef.current = reset
-
-    const drawBike = (cx: number, cy: number, colour: string) => {
-      circle(cx - 10, cy + 23, 8, '#111827'); circle(cx + 10, cy + 23, 8, '#111827')
-      rect(cx - 12, cy - 12, 24, 35, colour); rect(cx - 17, cy - 6, 34, 5, '#d8e5ff'); circle(cx, cy - 17, 8, '#f5d0a9')
+    const active = () => {
+      const store = useWindowStore.getState()
+      return (
+        store.focusedWindow === 'arcade' &&
+        store.windows.arcade.isOpen &&
+        !store.windows.arcade.isMinimized &&
+        !document.hidden
+      )
+    }
+    const visibility = () => {
+      if (document.hidden) pause()
+    }
+    const unsubscribe = useWindowStore.subscribe(() => {
+      if (!active()) pause()
+    })
+    const fail = () => {
+      if (disposed) return
+      pause()
+      setError(true)
+      setLoaded(false)
     }
     const draw = (stamp: number) => {
-      const playing = phaseRef.current === 'playing'
-      const dt = last ? Math.min((stamp - last) / 1000, 0.04) : 0
-      last = stamp
-      if (playing) elapsed += dt
-      rect(0, 0, 480, 480, '#080d19')
-      const left = keys.current.has('ArrowLeft') || keys.current.has('a')
-      const right = keys.current.has('ArrowRight') || keys.current.has('d')
-      if (playing) player = Math.max(game === 'racer' ? 108 : 55, Math.min(game === 'racer' ? 372 : 425, player + (Number(right) - Number(left)) * 340 * dt))
-
-      if (game === 'pong') {
-        for (let i = 18; i < 480; i += 25) rect(238, i, 3, 11, '#26344c')
-        if (playing) {
-          x += vx * dt; y += vy * dt; enemy += Math.sign(x - enemy) * Math.min(Math.abs(x - enemy), 155 * dt)
-          if (x < 20 || x > 460) { vx *= -1; x = Math.max(20, Math.min(460, x)) }
-          if (vy > 0 && y >= 426 && y < 451 && Math.abs(x - player) < 59) { vy = -Math.abs(vy) * 1.035; vx = (x - player) * 5; add(10) }
-          if (vy < 0 && y <= 54 && y > 26 && Math.abs(x - enemy) < 59) vy = Math.abs(vy)
-          if (y < 5) { add(50); x = 240; y = 240; vy = 220 }
-          if (y > 490 && !loseLife()) { x = 240; y = 280; vy = -220 }
+      if (disposed) return
+      if (active()) {
+        if (last)
+          stepper.advance((stamp - last) / 1000, (dt) =>
+            stepGame(state.current, input.current, dt),
+          )
+        last = stamp
+        view?.draw(state.current)
+        if (stamp - lastHud >= 100) {
+          showHud()
+          lastHud = stamp
+          if (state.current.phase === 'over') saveBest()
         }
-        rect(player - 50, 438, 100, 9, '#7cf4cb'); rect(enemy - 50, 34, 100, 9, '#ff88bb'); circle(x, y, 8, '#fff')
-      } else if (game === 'pinball') {
-        if (playing) {
-          vy += 305 * dt; x += vx * dt; y += vy * dt
-          if (x < 24 || x > 456) { vx *= -1; x = Math.max(24, Math.min(456, x)) }
-          if (y < 25) { vy = Math.abs(vy); y = 25 }
-        }
-        ctx.strokeStyle = '#283858'; ctx.lineWidth = 5; ctx.beginPath(); ctx.roundRect(17, 17, 446, 446, 26); ctx.stroke()
-        for (const [bx, by] of [[150, 140], [330, 140], [240, 235]] as const) {
-          circle(bx, by, 31, '#573e78'); circle(bx, by, 22, '#ff8fd1')
-          const dx = x - bx, dy = y - by, distance = Math.hypot(dx, dy)
-          if (playing && distance < 40 && distance > 0) { x = bx + dx / distance * 41; y = by + dy / distance * 41; vx = dx / distance * 315; vy = dy / distance * 315; add(25) }
-        }
-        const flipper = (cx: number, held: boolean, direction: number) => {
-          ctx.strokeStyle = held ? '#fff3a8' : '#70e9c0'; ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, 432); ctx.lineTo(cx + direction * 82, held ? 405 : 453); ctx.stroke()
-          if (playing && held && vy > 0 && y > 392 && y < 459 && x > Math.min(cx, cx + direction * 82) - 10 && x < Math.max(cx, cx + direction * 82) + 10) { vy = -445; vx = direction * 135; y = 390; add(5) }
-        }
-        flipper(125, left, 1); flipper(355, right, -1); circle(x, y, 8, '#fff')
-        if (playing && y > 495 && !loseLife()) { x = 240; y = 300; vx = remaining % 2 ? 160 : -160; vy = -300 }
       } else {
-        const horizon = 105
-        ctx.fillStyle = '#10152b'; ctx.fillRect(0, 0, 480, horizon)
-        ctx.fillStyle = '#f1789f'; ctx.beginPath(); ctx.arc(240, 92, 39, Math.PI, 0); ctx.fill()
-        ctx.fillStyle = '#111a2d'; ctx.beginPath(); ctx.moveTo(55, 480); ctx.lineTo(184, horizon); ctx.lineTo(296, horizon); ctx.lineTo(425, 480); ctx.fill()
-        for (let i = 0; i < 7; i++) { const laneY = ((i * 90 + elapsed * 245) % 630) - 30; const scale = Math.max(.15, laneY / 480); rect(238 - scale * 2, laneY, 4 * scale, 36 * scale, '#f7d89a') }
-        if (playing) {
-          invulnerable = Math.max(0, invulnerable - dt)
-          const survivalPoints = Math.floor(elapsed)
-          if (survivalPoints > lastSurvivalPoint) {
-            add(survivalPoints - lastSurvivalPoint)
-            lastSurvivalPoint = survivalPoints
-          }
-          const speed = 195 + Math.min(150, points * 2)
-          obstacleY += speed * dt; secondY += speed * .92 * dt
-          if (obstacleY > 530) { obstacleY = -90; obstacleX = 112 + Math.random() * 256; add(10) }
-          if (secondY > 530) { secondY = -180; secondX = 112 + Math.random() * 256; add(10) }
-          for (const [ox, oy] of [[obstacleX, obstacleY], [secondX, secondY]]) if (!invulnerable && Math.abs(player - ox) < 31 && Math.abs(410 - oy) < 52) { invulnerable = 1.5; if (loseLife()) break }
-        }
-        drawBike(obstacleX, obstacleY, '#fd7aa7'); drawBike(secondX, secondY, '#75a9ff')
-        if (!invulnerable || Math.floor(invulnerable * 8) % 2 === 0) drawBike(player, 410, '#73efc0')
+        last = 0
       }
-
-      if (phaseRef.current !== 'playing') {
-        ctx.fillStyle = '#050914bb'; ctx.fillRect(0, 0, 480, 480)
-        ctx.fillStyle = '#fff'; ctx.font = '600 26px system-ui'; ctx.textAlign = 'center'
-        ctx.fillText(phaseRef.current === 'paused' ? 'Paused' : phaseRef.current === 'gameover' ? 'Game over' : gameNames[game], 240, 225)
-        ctx.fillStyle = '#b8c5db'; ctx.font = '15px system-ui'; ctx.fillText(phaseRef.current === 'paused' ? 'Resume when you’re ready' : phaseRef.current === 'gameover' ? `Final score ${points}` : 'Press Play to begin', 240, 258)
-      }
-      if (phaseRef.current === 'playing') frameRef.current = requestAnimationFrame(draw)
+      frame = requestAnimationFrame(draw)
     }
-    drawRef.current = draw
-    frameRef.current = requestAnimationFrame(draw)
-    const heldKeys = keys.current
-    return () => { cancelAnimationFrame(frameRef.current); drawRef.current = null; resetRef.current = null; heldKeys.clear() }
-  }, [game, transition])
-
-  const setKey = (key: string, down: boolean) => { if (down) keys.current.add(key); else keys.current.delete(key) }
-  const chooseGame = (next: Game) => {
-    if (next === game) return
-    transition('ready')
-    setScore(0)
-    setLives(3)
-    setBest(Math.max(0, Number(safeStorage.getItem(`arcade-${next}`)) || 0))
-    setGame(next)
+    void import('../arcade/renderer')
+      .then(({ createArcadeRenderer }) => {
+        if (disposed || !host.current) return
+        view = createArcadeRenderer(host.current, game, fail)
+        setLoaded(true)
+        frame = requestAnimationFrame(draw)
+      })
+      .catch(fail)
+    window.addEventListener('blur', pause)
+    document.addEventListener('visibilitychange', visibility)
+    return () => {
+      disposed = true
+      cancelAnimationFrame(frame)
+      unsubscribe()
+      window.removeEventListener('blur', pause)
+      document.removeEventListener('visibilitychange', visibility)
+      saveBest()
+      view?.dispose()
+    }
+  }, [game, attempt])
+  const start = () => {
+    if (!loaded || error) return
+    if (state.current.phase === 'over' || state.current.phase === 'ready')
+      state.current = createGame(game)
+    state.current.phase = 'playing'
+    publish()
+    stage.current?.focus({ preventScroll: true })
   }
-  const playPause = () => {
-    if (phaseRef.current === 'playing') transition('paused')
-    else if (phaseRef.current === 'paused') transition('playing')
-    else { resetRef.current?.(); transition('playing') }
+  const pause = () => {
+    state.current.phase = 'paused'
+    input.current = emptyInput()
+    publish()
+    save()
   }
-  return <div className="arcade-app"><header className="window-header"><WindowControls target="arcade"/><span>After Hours Arcade</span></header><div className="arcade-toolbar">{(Object.keys(gameNames) as Game[]).map(item => <button key={item} aria-pressed={game === item} onClick={() => chooseGame(item)}>{gameNames[item]}</button>)}<span>Score {score} · Best {best} · Lives {lives}</span></div><div className="arcade-stage" tabIndex={0} aria-label={`${gameNames[game]} controls: left and right arrows, A and D`} onKeyDown={event => { if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(event.key)) { event.preventDefault(); setKey(event.key, true) } }} onKeyUp={event => setKey(event.key, false)} onBlur={() => { keys.current.clear(); if (phaseRef.current === 'playing') transition('paused') }}><canvas ref={canvas} width={480} height={480} aria-label={`${gameNames[game]} game field`}/></div><div className="arcade-controls"><button onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setKey('ArrowLeft', true) }} onPointerUp={() => setKey('ArrowLeft', false)} onPointerCancel={() => setKey('ArrowLeft', false)} onLostPointerCapture={() => setKey('ArrowLeft', false)}>◀ Left</button><button className="arcade-play" onClick={event => { playPause(); (event.currentTarget.closest('.arcade-app')?.querySelector('.arcade-stage') as HTMLElement)?.focus() }}>{phase === 'playing' ? 'Pause' : phase === 'paused' ? 'Resume' : phase === 'gameover' ? 'Play again' : 'Play'}</button><button onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setKey('ArrowRight', true) }} onPointerUp={() => setKey('ArrowRight', false)} onPointerCancel={() => setKey('ArrowRight', false)} onLostPointerCapture={() => setKey('ArrowRight', false)}>Right ▶</button></div><p className="arcade-caption">{game === 'pinball' ? 'Hold left and right independently to lift the flippers.' : game === 'pong' ? 'Return the ball and protect the bottom edge.' : 'Steer through neon traffic. The road gets faster as you score.'} Switching apps pauses your run.</p></div>
+  const restart = () => {
+    save()
+    state.current = createGame(game)
+    input.current = emptyInput()
+    publish()
+  }
+  const keys: Record<string, keyof Input> = {
+    arrowleft: 'left',
+    a: 'left',
+    arrowright: 'right',
+    d: 'right',
+    shift: 'boost',
+    arrowdown: 'brake',
+    s: 'brake',
+  }
+  const held = (key: keyof Input) => ({
+    onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+      event.currentTarget.setPointerCapture(event.pointerId)
+      input.current[key] = true
+    },
+    onPointerUp: () => {
+      input.current[key] = false
+    },
+    onPointerCancel: () => {
+      input.current[key] = false
+    },
+    onLostPointerCapture: () => {
+      input.current[key] = false
+    },
+  })
+  return (
+    <div
+      className="game-session"
+      role="tabpanel"
+      id={`arcade-panel-${game}`}
+      aria-labelledby={`arcade-tab-${game}`}
+    >
+      <div className="game-hud">
+        <div className="score-block" aria-label="Score">
+          <span>{game === 'racer' ? 'DISTANCE' : 'SCORE'}</span>
+          <strong>
+            {String(hud.score).padStart(4, '0')}
+            {game === 'racer' && <small> m</small>}
+          </strong>
+        </div>
+        <div className="game-record">
+          <span>PERSONAL BEST</span>
+          <strong>{hud.best.toLocaleString()}</strong>
+        </div>
+        <div className="game-lives" aria-label={`${hud.lives} lives remaining`}>
+          {[0, 1, 2].map((i) => (
+            <i key={i} className={i < hud.lives ? 'alive' : ''} />
+          ))}
+        </div>
+        <div className="game-tools">
+          {hud.phase === 'playing' ? (
+            <button onClick={pause} aria-label="Pause game">
+              <Pause size={17} />
+            </button>
+          ) : hud.phase === 'paused' ? (
+            <button onClick={start} aria-label="Resume game">
+              <Play size={17} />
+            </button>
+          ) : null}
+          <button onClick={restart} aria-label="Restart game">
+            <RotateCcw size={17} />
+          </button>
+        </div>
+      </div>
+      <div
+        className="game-stage"
+        tabIndex={0}
+        ref={stage}
+        aria-label={`${games[game].name} keyboard controls`}
+        onKeyDown={(e) => {
+          const action = keys[e.key.toLowerCase()]
+          if (action) {
+            e.preventDefault()
+            input.current[action] = true
+          }
+          if (e.code === 'Space' && !e.repeat) {
+            e.preventDefault()
+            if (state.current.phase === 'playing') pause()
+            else start()
+          }
+        }}
+        onKeyUp={(e) => {
+          const action = keys[e.key.toLowerCase()]
+          if (action) {
+            e.preventDefault()
+            input.current[action] = false
+          }
+        }}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node))
+            input.current = emptyInput()
+        }}
+      >
+        <div className="game-canvas" ref={host} />
+        {(hud.phase !== 'playing' || error) && (
+          <div className="game-overlay">
+            <span className="game-eyebrow">
+              {error
+                ? 'GRAPHICS UNAVAILABLE'
+                : hud.phase === 'paused'
+                  ? 'TAKE YOUR TIME'
+                  : hud.phase === 'over'
+                    ? 'ONE MORE TRY?'
+                    : 'AFTER HOURS / 0' +
+                      (['pinball', 'pong', 'racer'].indexOf(game) + 1)}
+            </span>
+            <h2>
+              {error
+                ? 'A small detour.'
+                : hud.phase === 'paused'
+                  ? 'Paused.'
+                  : hud.phase === 'over'
+                    ? 'Good run.'
+                    : games[game].tag}
+            </h2>
+            <p>
+              {error
+                ? 'This browser could not start the 3D scene. Try again, or enable hardware acceleration.'
+                : hud.phase === 'over'
+                  ? `You scored ${hud.score}. Your best is ${hud.best}.`
+                  : games[game].description}
+            </p>
+            <button
+              className="game-start"
+              disabled={!error && !loaded}
+              onClick={() => {
+                if (error) {
+                  setError(false)
+                  setAttempt((a) => a + 1)
+                } else start()
+              }}
+            >
+              <Play size={16} />
+              {error
+                ? 'Retry graphics'
+                : !loaded
+                  ? 'Preparing the scene…'
+                  : hud.phase === 'paused'
+                    ? 'Resume playing'
+                    : hud.phase === 'over'
+                      ? 'Play again'
+                      : 'Start playing'}
+            </button>
+          </div>
+        )}
+        {game === 'racer' && hud.phase === 'playing' && (
+          <div className="game-telemetry">
+            <strong>
+              {hud.speed}
+              <small> km/h</small>
+            </strong>
+            <label>
+              <Zap size={13} />
+              <meter
+                min={0}
+                max={100}
+                value={hud.energy}
+                aria-label="Boost energy"
+              />
+            </label>
+          </div>
+        )}
+      </div>
+      <div className="game-footer">
+        <p>
+          {games[game].controls}
+          <span>Space pauses · Switching apps pauses your run</span>
+        </p>
+        <div className="game-touch">
+          <button {...held('left')} aria-label="Hold left">
+            <ArrowLeft size={19} />
+          </button>
+          {game === 'racer' && (
+            <>
+              <button {...held('brake')}>Brake</button>
+              <button {...held('boost')} aria-label="Hold boost">
+                <Zap size={17} />
+              </button>
+            </>
+          )}
+          <button {...held('right')} aria-label="Hold right">
+            <ArrowRight size={19} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+function Arcade() {
+  const [game, setGame] = useState<GameId>('pinball')
+  return (
+    <div className="arcade-app">
+      <header className="window-header">
+        <WindowControls target="arcade" />
+        <span>After Hours</span>
+        <span className="arcade-header-note">
+          A LITTLE PLAY GOES A LONG WAY
+        </span>
+      </header>
+      <div
+        className="arcade-selector"
+        role="tablist"
+        aria-label="Choose a game"
+        onKeyDown={(event) => {
+          const ids = Object.keys(games) as GameId[]
+          const index = ids.indexOf(game)
+          const next =
+            event.key === 'ArrowRight'
+              ? (index + 1) % ids.length
+              : event.key === 'ArrowLeft'
+                ? (index + ids.length - 1) % ids.length
+                : event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? ids.length - 1
+                    : -1
+          if (next < 0) return
+          event.preventDefault()
+          setGame(ids[next])
+          document.getElementById(`arcade-tab-${ids[next]}`)?.focus()
+        }}
+      >
+        {(Object.keys(games) as GameId[]).map((id, i) => (
+          <button
+            role="tab"
+            id={`arcade-tab-${id}`}
+            aria-controls={`arcade-panel-${id}`}
+            tabIndex={game === id ? 0 : -1}
+            aria-selected={game === id}
+            key={id}
+            onClick={() => setGame(id)}
+          >
+            <small>0{i + 1}</small>
+            <strong>{games[id].name}</strong>
+            <span>
+              {id === 'pinball'
+                ? 'THE CLASSIC'
+                : id === 'pong'
+                  ? 'THE RALLY'
+                  : 'THE ESCAPE'}
+            </span>
+          </button>
+        ))}
+      </div>
+      <GameSession key={game} game={game} />
+    </div>
+  )
 }
 export default WindowWrapper(Arcade, 'arcade')

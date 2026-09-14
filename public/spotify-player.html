@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spotify · Stillwater</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #181c1d;
+        color: #e8eee5;
+        font:
+          12px/1.5 system-ui,
+          sans-serif;
+      }
+      #embed {
+        min-height: 152px;
+        display: grid;
+        place-items: center;
+      }
+      iframe {
+        display: block;
+        border: 0;
+      }
+    </style>
+    <script src="/spotify-player.js" defer></script>
+  </head>
+  <body>
+    <div id="embed">Connecting to Spotify…</div>
+  </body>
+</html>

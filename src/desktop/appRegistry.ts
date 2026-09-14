@@ -19,7 +19,7 @@ export const appRegistry: Record<WindowKey, AppDefinition> = {
   safari: { id: 'safari', name: 'Safari', description: 'GitHub and bookmarks', icon: 'safari.png', defaultSize: { width: 980, height: 650 }, dock: true, searchable: true },
   photos: { id: 'photos', name: 'Photos', description: 'Photos, favorites, and wallpapers', icon: 'photos.png', desktopIcon: Image, defaultSize: { width: 980, height: 680 }, dock: true, desktop: true, searchable: true },
   terminal: { id: 'terminal', name: 'Terminal', description: 'A real browser-hosted Node shell', icon: 'terminal.png', desktopIcon: Terminal, defaultSize: { width: 980, height: 640 }, dock: true, desktop: true, searchable: true },
-  arcade: { id: 'arcade', name: 'Arcade', description: 'Pinball, paddle ball, and Midnight Ride', desktopIcon: Gamepad2, defaultSize: { width: 760, height: 720 }, dock: true, desktop: true, searchable: true },
+  arcade: { id: 'arcade', name: 'Arcade', description: 'Three-dimensional pinball, paddle ball, and Nightshift', desktopIcon: Gamepad2, defaultSize: { width: 960, height: 760 }, dock: true, desktop: true, searchable: true },
   settings: { id: 'settings', name: 'Settings', description: 'Wallpaper, motion, and local data', desktopIcon: Settings, defaultSize: { width: 760, height: 660 }, dock: true, desktop: true, searchable: true },
   contact: { id: 'contact', name: 'Contact', description: 'Email and social links', icon: 'contact.png', desktopIcon: Mail, defaultSize: { width: 580, height: 650 }, dock: true, desktop: true, searchable: true },
   resume: { id: 'resume', name: 'Résumé', description: 'View or download my résumé', icon: 'pdf.png', defaultSize: { width: 900, height: 680 }, searchable: true },
